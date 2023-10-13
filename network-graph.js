@@ -29,7 +29,7 @@ d3.json("data.json").then(function (data) {
         requestAnimationFrame(animate);
 
 
-        // renderer.setClearColor(0xffffff, 1.0);
+        renderer.setClearColor(0xffffff, 1.0);
 
         scene.rotation.y += 0.004;
         controls.update();
@@ -102,8 +102,8 @@ d3.json("data.json").then(function (data) {
         const numServices = serviceNodes.length;
         serviceNodes.forEach((node, index) => {
             const theta = 2 * Math.PI * (index / numServices);
-            const x = serviceRadius * Math.cos(theta);
-            const y = 0;
+            const x = 0;
+            const y = serviceRadius * Math.cos(theta);
             const z = serviceRadius * Math.sin(theta);
 
 
@@ -155,8 +155,8 @@ d3.json("data.json").then(function (data) {
 
         tableNodes.forEach((node, index) => {
             const theta = 2 * Math.PI * (index / tableNodes.length);
-            const x = 0;
-            const y = tableRadius * Math.cos(theta);
+            const x = tableRadius * Math.cos(theta);
+            const y = 0;
             const z = tableRadius * Math.sin(theta);
 
             const geometry = new THREE.SphereGeometry(0.2, 18, 12);
@@ -212,7 +212,7 @@ d3.json("data.json").then(function (data) {
         canvas.height = 20;
 
         context.font = 'bold 14px Roboto';
-        context.fillStyle = '#A6F6FF';
+        context.fillStyle = '#2E4374';
         context.fillText(text, 0, 12);
 
         const texture = new THREE.Texture(canvas);
