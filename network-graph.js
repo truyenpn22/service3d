@@ -24,23 +24,6 @@ d3.json("data.json").then(function (data) {
     // ==============================================================
 
 
-
-    const animate = () => {
-        requestAnimationFrame(animate);
-
-
-        renderer.setClearColor(0xffffff, 1.0);
-
-        scene.rotation.y += 0.004;
-        controls.update();
-
-
-        renderer.render(scene, camera);
-    };
-
-    animate();
-
-
     const colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 
@@ -70,6 +53,7 @@ d3.json("data.json").then(function (data) {
                     tableNode = {
                         id: table.id,
                         name: table.name,
+                        count: table.count,
                         type: "table"
                     };
                     nodes.push(tableNode);
@@ -95,21 +79,27 @@ d3.json("data.json").then(function (data) {
 
 
     function createVisualNodesAndLinks(nodes, links) {
+
+
         const serviceRadius = 5;
         const tableRadius = 5;
 
+
         const serviceNodes = nodes.filter(node => node.type === 'service');
         const numServices = serviceNodes.length;
+
         serviceNodes.forEach((node, index) => {
-            const theta = 2 * Math.PI * (index / numServices);
+            const theta = (index / numServices) * Math.PI * 2;
             const x = 0;
             const y = serviceRadius * Math.cos(theta);
             const z = serviceRadius * Math.sin(theta);
 
 
-            const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 18);
+            const geometry = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 18);
             geometry.rotateX(Math.PI / 2);
 
+
+            // =================== Text service ======================
 
             const labelCanvas = document.createElement('canvas');
             const labelContext = labelCanvas.getContext('2d');
@@ -138,11 +128,158 @@ d3.json("data.json").then(function (data) {
             const sphere = new THREE.Mesh(geometry, material);
 
 
+            // ====================== Click servicenode ========================
+
+
+            sphere.onClick = function () {
+
+                // Clear existing shadows and connected lines from other service nodes
+                serviceNodes.forEach((otherNode) => {
+                    if (otherNode.sphere !== this) {
+                        const otherShadowMesh = otherNode.sphere.userData.shadowMesh;
+                        if (otherShadowMesh) {
+                            scene.remove(otherShadowMesh);
+                            otherNode.sphere.userData.shadowMesh = null;
+                            otherNode.sphere.userData.connectedLines.forEach((line) => {
+                                scene.remove(line);
+                            });
+                            otherNode.sphere.userData.connectedLines = [];
+                        }
+                    }
+                    // Check if the node is connected to a table and remove its shadowMesh
+                    links.forEach((link) => {
+                        if (link.source === otherNode.id) {
+                            const targetNode = nodes.find(n => n.id === link.target);
+                            if (targetNode && targetNode.type === 'table' && targetNode.sphere.userData.shadowMesh) {
+                                scene.remove(targetNode.sphere.userData.shadowMesh);
+                                targetNode.sphere.userData.shadowMesh = null;
+                            }
+                        }
+                    });
+                });
+
+
+                // =================== Shadow Tablesnode =====================
+
+
+                this.userData.isSelected = !this.userData.isSelected;
+
+                if (this.userData.isSelected) {
+                    if (!this.userData.shadowMesh) {
+                        const shadowGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.12, 18);
+                        shadowGeometry.rotateX(Math.PI / 2);
+
+                        const shadowMaterial = new THREE.MeshBasicMaterial({
+                            color: colors(node.id),
+                            transparent: true,
+                            opacity: 0.5,
+                        });
+
+                        const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
+                        scene.add(shadowMesh);
+                        this.userData.shadowMesh = shadowMesh;
+                    }
+
+                    this.userData.connectedLines = [];
+
+
+                    // ========================= Connection path =============================
+
+
+                    links.forEach((link) => {
+                        if (link.source === node.id) {
+                            const targetNode = nodes.find(n => n.id === link.target);
+
+                            if (targetNode && targetNode.type === 'table') {
+                                const targetPosition = targetNode.sphere.position;
+                                const distance = this.position.distanceTo(targetPosition);
+                                const geometry = new THREE.CylinderGeometry(0.02, 0.02, distance, 18);
+                                const material = new THREE.MeshBasicMaterial({
+                                    color: new THREE.Color(colors(node.id)),
+                                });
+                                const line = new THREE.Mesh(geometry, material);
+
+                                const direction = new THREE.Vector3().subVectors(targetPosition, this.position);
+                                const midpoint = new THREE.Vector3().addVectors(this.position, direction.multiplyScalar(0.5));
+                                line.position.copy(midpoint);
+
+                                const axis = new THREE.Vector3(0, 1, 0);
+                                line.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
+                                scene.add(line);
+
+                                this.userData.connectedLines.push(line);
+
+
+                                // =================== Shadow Tablesnode =====================
+
+
+                                const shadowGeometry = new THREE.SphereGeometry(0.26, 18, 12);
+                                shadowGeometry.rotateX(Math.PI / 2);
+
+                                const shadowMaterial = new THREE.MeshBasicMaterial({
+                                    color: colors(targetNode.id),
+                                    transparent: true,
+                                    opacity: 0.5,
+                                });
+
+                                const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
+                                shadowMesh.position.copy(targetPosition);
+                                scene.add(shadowMesh);
+
+                                targetNode.sphere.userData.shadowMesh = shadowMesh;
+
+                            }
+                        }
+                    });
+                } else {
+
+                    const shadowMesh = this.userData.shadowMesh;
+
+                    // =========== Remove shadowMesh service ===========
+                    if (shadowMesh) {
+                        scene.remove(shadowMesh);
+                        this.userData.shadowMesh = null;
+                    }
+
+                    // =========== Remove line ===========
+
+                    this.userData.connectedLines.forEach(line => scene.remove(line));
+
+                    // =========== Remove shadowMesh tables ===========
+
+                    links.forEach((link) => {
+                        if (link.source === node.id) {
+                            const targetNode = nodes.find(n => n.id === link.target);
+                            if (targetNode && targetNode.type === 'table' && targetNode.sphere.userData.shadowMesh) {
+                                scene.remove(targetNode.sphere.userData.shadowMesh);
+                                targetNode.sphere.userData.shadowMesh = null;
+                            }
+                        }
+                    });
+
+                }
+            };
+
             sphere.position.set(x, y, z);
             node.sphere = sphere;
             scene.add(sphere);
         });
 
+
+        renderer.domElement.addEventListener('click', onDocumentClick);
+        function onDocumentClick(event) {
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(serviceNodes.map(node => node.sphere));
+
+            if (intersects.length > 0) {
+                intersects[0].object.onClick();
+            }
+        }
 
 
 
@@ -154,7 +291,10 @@ d3.json("data.json").then(function (data) {
         const tableNodes = nodes.filter(node => node.type === 'table');
 
         tableNodes.forEach((node, index) => {
-            const theta = 2 * Math.PI * (index / tableNodes.length);
+
+            const quadrant = index % 10;
+
+            const theta = (quadrant / 10) * Math.PI * 2;
             const x = tableRadius * Math.cos(theta);
             const y = 0;
             const z = tableRadius * Math.sin(theta);
@@ -167,53 +307,76 @@ d3.json("data.json").then(function (data) {
             node.sphere = sphere;
             scene.add(sphere);
 
+            // ============ Text tables ==============
 
-            const label = createLabel(node.name.toUpperCase());
-            label.position.set(x, y + 0.5, z);
+            const countLabel = createLabel(node.count);
+            countLabel.position.set(x, y + 0.7, z);
+            scene.add(countLabel);
+
+            const label = createLabel(node.name.toUpperCase(), "bold 20px Roboto", colors(node.id));
+            label.position.set(x, y + 0.3, z);
             scene.add(label);
         });
 
+
+
         // ==============================================================
+
+
 
         links.forEach(link => {
             const sourceNode = nodes.find(n => n.id === link.source);
             const targetNode = nodes.find(n => n.id === link.target);
-
             if (sourceNode.type === 'service' && targetNode.type === 'table') {
-                const geometry = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(sourceNode.sphere.position.x, sourceNode.sphere.position.y, sourceNode.sphere.position.z),
-                    new THREE.Vector3(targetNode.sphere.position.x, targetNode.sphere.position.y, targetNode.sphere.position.z)
-                ]);
+                const sourcePosition = new THREE.Vector3(
+                    sourceNode.sphere.position.x,
+                    sourceNode.sphere.position.y,
+                    sourceNode.sphere.position.z
+                );
+                const targetPosition = new THREE.Vector3(
+                    targetNode.sphere.position.x,
+                    targetNode.sphere.position.y,
+                    targetNode.sphere.position.z
+                );
 
-                const material = new THREE.LineBasicMaterial({ color: new THREE.Color(colors(sourceNode.id)) });
-                const line = new THREE.Line(geometry, material);
+                const distance = sourcePosition.distanceTo(targetPosition);
+
+                const geometry = new THREE.CylinderGeometry(0.01, 0.01, distance, 18);
+                const material = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color(colors(sourceNode.id)),
+                });
+                const line = new THREE.Mesh(geometry, material);
+
+                const direction = new THREE.Vector3().subVectors(targetPosition, sourcePosition);
+                const midpoint = new THREE.Vector3().addVectors(sourcePosition, direction.multiplyScalar(0.5));
+                line.position.copy(midpoint);
+
+                const axis = new THREE.Vector3(0, 1, 0);
+                line.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
 
                 scene.add(line);
             }
         });
+
     };
 
     const { nodes, links } = extractNodesAndLinks(data);
     createVisualNodesAndLinks(nodes, links)
 
-
-
     // ==============================================================
 
-
-
-    function createLabel(text) {
+    function createLabel(text, fontText, color) {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        context.font = 'bold 14px Roboto';
+        context.font = fontText || 'bold 14px Roboto';
         const width = context.measureText(text).width;
 
-        canvas.width = width;
-        canvas.height = 20;
+        canvas.width = width + 10;
+        canvas.height = 30;
 
-        context.font = 'bold 14px Roboto';
-        context.fillStyle = '#2E4374';
-        context.fillText(text, 0, 12);
+        context.font = fontText || 'bold 14px Roboto';
+        context.fillStyle = color || "white";
+        context.fillText(text, 0, 15);
 
         const texture = new THREE.Texture(canvas);
         texture.needsUpdate = true;
@@ -226,4 +389,36 @@ d3.json("data.json").then(function (data) {
         label.scale.set(1, 0.5, 1);
         return label;
     };
+
+    // ================================================================
+
+    let serviceNodes;
+    const animate = () => {
+        requestAnimationFrame(animate);
+
+        // renderer.setClearColor(0xffffff, 1.0);
+
+        scene.rotation.y += 0.004;
+
+        serviceNodes = nodes.filter(node => node.type === 'service');
+
+
+        serviceNodes.forEach((node, index) => {
+            node.sphere.rotation.y -= 0.004;
+
+            if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
+                const shadowMesh = node.sphere.userData.shadowMesh;
+                shadowMesh.position.copy(node.sphere.position);
+                shadowMesh.rotation.copy(node.sphere.rotation);
+            }
+        });
+
+        controls.update();
+
+        renderer.render(scene, camera);
+    };
+
+    animate();
+
 });
+

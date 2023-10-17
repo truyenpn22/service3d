@@ -3,508 +3,323 @@
         {
             "id": "service1",
             "name": "Service1",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables3",
+                    "name": "TAB_TMP11",
+                    "count": 150
+                },
+                {
+                    "id": "users22",
+                    "name": "TAB_TMP22",
+                    "count": 150
                 },
                 {
                     "id": "orders",
                     "name": "Orders",
-                    "fields": [
-                        "id",
-                        "user_id",
-                        "product_id",
-                        "quantity",
-                        "total_price",
-                        "status"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "products",
                     "name": "Products",
-                    "fields": [
-                        "id",
-                        "name",
-                        "description",
-                        "price",
-                        "stock_quantity"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users2",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables2",
+                    "name": "TAB_TMP44",
+                    "count": 150
+                },
+                {
+                    "id": "tables1",
+                    "name": "TAB_TMP55",
+                    "count": 150
                 },
                 {
                     "id": "users3",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
             "id": "service2",
             "name": "Service2",
-            "description": "Manages user orders and payment processing.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables3",
+                    "name": "TAB_TMP11",
+                    "count": 150
+                },
+                {
+                    "id": "users22",
+                    "name": "TAB_TMP22",
+                    "count": 150
                 },
                 {
                     "id": "orders",
                     "name": "Orders",
-                    "fields": [
-                        "id",
-                        "user_id",
-                        "product_id",
-                        "quantity",
-                        "total_price",
-                        "status"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "products",
                     "name": "Products",
-                    "fields": [
-                        "id",
-                        "name",
-                        "description",
-                        "price",
-                        "stock_quantity"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
             "id": "service3",
             "name": "Service3",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "users22",
+                    "name": "TAB_TMP22",
+                    "count": 150
                 },
                 {
                     "id": "orders",
                     "name": "Orders",
-                    "fields": [
-                        "id",
-                        "user_id",
-                        "product_id",
-                        "quantity",
-                        "total_price",
-                        "status"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "products",
                     "name": "Products",
-                    "fields": [
-                        "id",
-                        "name",
-                        "description",
-                        "price",
-                        "stock_quantity"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users1",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
             "id": "service4",
             "name": "Service4",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables3",
+                    "name": "TAB_TMP11",
+                    "count": 150
+                },
+                {
+                    "id": "users22",
+                    "name": "TAB_TMP22",
+                    "count": 150
                 },
                 {
                     "id": "orders",
                     "name": "Orders",
-                    "fields": [
-                        "id",
-                        "user_id",
-                        "product_id",
-                        "quantity",
-                        "total_price",
-                        "status"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "products",
                     "name": "Products",
-                    "fields": [
-                        "id",
-                        "name",
-                        "description",
-                        "price",
-                        "stock_quantity"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
             "id": "service5",
             "name": "Service5",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
+                {
+                    "id": "users22",
+                    "name": "TAB_TMP22",
+                    "count": 150
+                },
+                {
+                    "id": "tables3",
+                    "name": "TAB_TMP11",
+                    "count": 150
+                },
+                {
+                    "id": "tables1",
+                    "name": "TAB_TMP55",
+                    "count": 150
+                },
+                {
+                    "id": "tables2",
+                    "name": "TAB_TMP44",
+                    "count": 150
+                },
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "orders",
                     "name": "Orders",
-                    "fields": [
-                        "id",
-                        "user_id",
-                        "product_id",
-                        "quantity",
-                        "total_price",
-                        "status"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "products",
                     "name": "Products",
-                    "fields": [
-                        "id",
-                        "name",
-                        "description",
-                        "price",
-                        "stock_quantity"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users2",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users3",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
             "id": "service6",
             "name": "Service6",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables2",
+                    "name": "TAB_TMP44",
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users2",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables1",
+                    "name": "TAB_TMP55",
+                    "count": 150
                 },
                 {
                     "id": "users3",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
             "id": "service7",
             "name": "Service7",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users2",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables1",
+                    "name": "TAB_TMP55",
+                    "count": 150
                 },
                 {
                     "id": "users3",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         },
         {
-            "id": "service15",
+            "id": "service8",
             "name": "Service8",
-            "description": "Handles product listing and inventory.",
             "relatedTables": [
                 {
                     "id": "users",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables2",
+                    "name": "TAB_TMP44",
+                    "count": 150
+                },
+                {
+                    "id": "tables1",
+                    "name": "TAB_TMP55",
+                    "count": 150
                 },
                 {
                     "id": "users1",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 },
                 {
                     "id": "users2",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
+                },
+                {
+                    "id": "tables3",
+                    "name": "TAB_TMP11",
+                    "count": 150
                 },
                 {
                     "id": "users3",
                     "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
-                }
-            ]
-        },
-        {
-            "id": "service12",
-            "name": "Service8",
-            "description": "Handles product listing and inventory.",
-            "relatedTables": [
-                {
-                    "id": "users",
-                    "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
-                },
-                {
-                    "id": "users1",
-                    "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
-                },
-                {
-                    "id": "users2",
-                    "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
-                },
-                {
-                    "id": "users3",
-                    "name": "Users",
-                    "fields": [
-                        "id",
-                        "username",
-                        "password_hash",
-                        "email",
-                        "profile_pic"
-                    ]
+                    "count": 150
                 }
             ]
         }
