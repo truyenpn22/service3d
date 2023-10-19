@@ -4,8 +4,11 @@ d3.json("data.json").then(function (data) {
 
     // ==============================================================
 
+    // Create a 3D scene
     const scene = new THREE.Scene();
 
+
+    // Create a perspective camera with specified parameters
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 12;
 
@@ -15,28 +18,38 @@ d3.json("data.json").then(function (data) {
         canvas: document.createElement("canvas")
     });
 
-
+    // Create OrbitControls for camera manipulation
     const controls = new OrbitControls(camera, renderer.domElement);
+
+    // Append the renderer's canvas element to the container with the id "canvas-container"
     document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+
+    // Set the renderer size to match the window dimensions
     renderer.setSize(window.innerWidth, window.innerHeight);
 
 
     // ==============================================================
 
-
+    // Create a color scale using D3's ordinal scale with categorical color scheme
     const colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 
     // ==============================================================
 
-
+    // Function to extract nodes and links from data representing web services and relatedTables
     function extractNodesAndLinks(data) {
+        // Initialize arrays to store nodes and links
         let nodes = [];
         let links = [];
 
+
+        // Iterate through each web service in the data
         data.webServices.forEach(service => {
             let serviceNode = nodes.find(node => node.id === service.id);
 
+
+            // If the service node doesn't exist, create a new node for the service
             if (!serviceNode) {
                 serviceNode = {
                     id: service.id,
@@ -46,6 +59,8 @@ d3.json("data.json").then(function (data) {
                 nodes.push(serviceNode);
             }
 
+
+            // Iterate through each related table of the service
             service.relatedTables.forEach(table => {
                 let tableNode = nodes.find(node => node.id === table.id);
 
@@ -77,30 +92,36 @@ d3.json("data.json").then(function (data) {
     // ==============================================================
 
 
-
     function createVisualNodesAndLinks(nodes, links) {
 
-
-        const serviceRadius = 5;
+        // Radius of service and table nodes
+        const serviceRadius = 5.5;
         const tableRadius = 5;
 
+        // Filter out the list of service nodes
 
         const serviceNodes = nodes.filter(node => node.type === 'service');
         const numServices = serviceNodes.length;
 
+
+        // ================ Service Nodes ================
+
+
         serviceNodes.forEach((node, index) => {
+            // Calculate the position of the service node on a sphere
             const theta = (index / numServices) * Math.PI * 2;
             const x = 0;
             const y = serviceRadius * Math.cos(theta);
             const z = serviceRadius * Math.sin(theta);
 
-
+            // Create a cylinder geometry as the service node
             const geometry = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 18);
             geometry.rotateX(Math.PI / 2);
 
 
-            // =================== Text service ======================
+            // ================ Text service ================
 
+            // Create canvas and context for drawing text on the service node
             const labelCanvas = document.createElement('canvas');
             const labelContext = labelCanvas.getContext('2d');
 
@@ -108,6 +129,8 @@ d3.json("data.json").then(function (data) {
             const text = node.name.toUpperCase();
             const textWidth = labelContext.measureText(text).width;
 
+
+            // Set canvas size and draw text
             labelCanvas.width = textWidth * 1.2;
             labelCanvas.height = textWidth * 1.6;
 
@@ -121,18 +144,20 @@ d3.json("data.json").then(function (data) {
             labelContext.fillText(text, -textWidth / 2, 6);
             labelContext.restore();
 
+
+            // Create a texture from the canvas and apply it to the service node
             const texture = new THREE.CanvasTexture(labelCanvas);
-
-
             const material = new THREE.MeshBasicMaterial({ map: texture });
             const sphere = new THREE.Mesh(geometry, material);
 
+            sphere.position.set(x, y, z);
+            node.sphere = sphere;
+            scene.add(sphere);
 
-            // ====================== Click servicenode ========================
 
+            //================ Click service ================
 
             sphere.onClick = function () {
-
                 // Clear existing shadows and connected lines from other service nodes
                 serviceNodes.forEach((otherNode) => {
                     if (otherNode.sphere !== this) {
@@ -159,7 +184,7 @@ d3.json("data.json").then(function (data) {
                 });
 
 
-                // =================== Shadow Tablesnode =====================
+                // ================ Shadow Tablesnode ================
 
 
                 this.userData.isSelected = !this.userData.isSelected;
@@ -183,7 +208,7 @@ d3.json("data.json").then(function (data) {
                     this.userData.connectedLines = [];
 
 
-                    // ========================= Connection path =============================
+                    // ================ Connection path ================
 
 
                     links.forEach((link) => {
@@ -210,7 +235,7 @@ d3.json("data.json").then(function (data) {
                                 this.userData.connectedLines.push(line);
 
 
-                                // =================== Shadow Tablesnode =====================
+                                // ================ Shadow Tablesnode ================
 
 
                                 const shadowGeometry = new THREE.SphereGeometry(0.26, 18, 12);
@@ -235,18 +260,16 @@ d3.json("data.json").then(function (data) {
 
                     const shadowMesh = this.userData.shadowMesh;
 
-                    // =========== Remove shadowMesh service ===========
+                    // ================ Remove shadowMesh service ================
                     if (shadowMesh) {
                         scene.remove(shadowMesh);
                         this.userData.shadowMesh = null;
                     }
 
-                    // =========== Remove line ===========
-
+                    // ================ Remove line ================
                     this.userData.connectedLines.forEach(line => scene.remove(line));
 
-                    // =========== Remove shadowMesh tables ===========
-
+                    //================ Remove shadowMesh tables ================
                     links.forEach((link) => {
                         if (link.source === node.id) {
                             const targetNode = nodes.find(n => n.id === link.target);
@@ -259,12 +282,10 @@ d3.json("data.json").then(function (data) {
 
                 }
             };
-
-            sphere.position.set(x, y, z);
-            node.sphere = sphere;
-            scene.add(sphere);
         });
 
+
+        //================ Click event  ================
 
         renderer.domElement.addEventListener('click', onDocumentClick);
         function onDocumentClick(event) {
@@ -282,22 +303,20 @@ d3.json("data.json").then(function (data) {
         }
 
 
-
-
-
-        // ==============================================================
-
+        // ================ Table Nodes ================
 
         const tableNodes = nodes.filter(node => node.type === 'table');
+        const numTables = tableNodes.length;
 
         tableNodes.forEach((node, index) => {
+            // Calculate the spherical coordinates for the table node
+            const phi = (index / (numTables / 2)) * Math.PI;
+            const theta = (index / numTables) * Math.PI * 2;
 
-            const quadrant = index % 10;
-
-            const theta = (quadrant / 10) * Math.PI * 2;
             const x = tableRadius * Math.cos(theta);
-            const y = 0;
+            const y = (index % 2 === 0 ? 0.5 : -0.5) * Math.abs(tableRadius * Math.sin(phi));
             const z = tableRadius * Math.sin(theta);
+
 
             const geometry = new THREE.SphereGeometry(0.2, 18, 12);
             const material = new THREE.MeshBasicMaterial({ color: colors(node.id) });
@@ -320,14 +339,17 @@ d3.json("data.json").then(function (data) {
 
 
 
-        // ==============================================================
-
-
+        // ================ Line connecting service and tables ================
 
         links.forEach(link => {
+            // Find the source and target nodes of the link
+
             const sourceNode = nodes.find(n => n.id === link.source);
             const targetNode = nodes.find(n => n.id === link.target);
+
+            // Check if the source is a service and the target is a table
             if (sourceNode.type === 'service' && targetNode.type === 'table') {
+                // Get the positions of the source and target nodes
                 const sourcePosition = new THREE.Vector3(
                     sourceNode.sphere.position.x,
                     sourceNode.sphere.position.y,
@@ -339,18 +361,24 @@ d3.json("data.json").then(function (data) {
                     targetNode.sphere.position.z
                 );
 
+                // Get the positions of the source and target nodes
                 const distance = sourcePosition.distanceTo(targetPosition);
 
+                // Create a cylinder geometry as the connecting line
                 const geometry = new THREE.CylinderGeometry(0.01, 0.01, distance, 18);
                 const material = new THREE.MeshBasicMaterial({
                     color: new THREE.Color(colors(sourceNode.id)),
                 });
                 const line = new THREE.Mesh(geometry, material);
 
+
+                // Position the line at the midpoint between the source and target
                 const direction = new THREE.Vector3().subVectors(targetPosition, sourcePosition);
                 const midpoint = new THREE.Vector3().addVectors(sourcePosition, direction.multiplyScalar(0.5));
                 line.position.copy(midpoint);
 
+
+                // Orient the line along the direction vector
                 const axis = new THREE.Vector3(0, 1, 0);
                 line.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
 
@@ -363,17 +391,23 @@ d3.json("data.json").then(function (data) {
     const { nodes, links } = extractNodesAndLinks(data);
     createVisualNodesAndLinks(nodes, links)
 
-    // ==============================================================
+    // ================ Optional text service  ================
 
     function createLabel(text, fontText, color) {
+        // Create a canvas and get its 2D rendering context
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         context.font = fontText || 'bold 14px Roboto';
+
+        // Measure the width of the text to determine the canvas size
         const width = context.measureText(text).width;
 
+        // Set the canvas size based on the text width and additional padding
         canvas.width = width + 10;
         canvas.height = 30;
 
+
+        // Set the font style and fill color on the canvas
         context.font = fontText || 'bold 14px Roboto';
         context.fillStyle = color || "white";
         context.fillText(text, 0, 15);
@@ -390,22 +424,25 @@ d3.json("data.json").then(function (data) {
         return label;
     };
 
-    // ================================================================
+    // ================ Rotate and drag the chart ================ 
 
     let serviceNodes;
     const animate = () => {
         requestAnimationFrame(animate);
 
-        // renderer.setClearColor(0xffffff, 1.0);
+        renderer.setClearColor(0xffffff, 1.0);
 
+
+        // Rotate the entire scene around the y-axis
         scene.rotation.y += 0.004;
 
+
+        // Filter service nodes and update their rotations
         serviceNodes = nodes.filter(node => node.type === 'service');
-
-
         serviceNodes.forEach((node, index) => {
-            node.sphere.rotation.y -= 0.004;
+            node.sphere.rotation.y -= 0.005;
 
+            // If the service node is selected and has a shadow, update the shadow position and rotation
             if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
                 const shadowMesh = node.sphere.userData.shadowMesh;
                 shadowMesh.position.copy(node.sphere.position);
@@ -413,8 +450,10 @@ d3.json("data.json").then(function (data) {
             }
         });
 
+        // Update controls for rotation and zoom
         controls.update();
 
+        // Render the scene using the camera
         renderer.render(scene, camera);
     };
 
