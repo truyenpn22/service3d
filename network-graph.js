@@ -440,7 +440,7 @@ d3.json("data.json").then(function (data) {
         // Filter service nodes and update their rotations
         serviceNodes = nodes.filter(node => node.type === 'service');
         serviceNodes.forEach((node, index) => {
-            node.sphere.rotation.y -= 0.005;
+            node.sphere.rotation.y -= 0.004;
 
             // If the service node is selected and has a shadow, update the shadow position and rotation
             if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
