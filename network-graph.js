@@ -1,12 +1,7 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/OrbitControls.js';
 import { TextGeometry } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/geometries/TextGeometry.js';
 import { FontLoader } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/loaders/FontLoader.js';
-import { OutlinePass } from 'https://unpkg.com/three@0.140.0/examples/jsm/postprocessing/OutlinePass.js';
-import { EffectComposer } from 'https://unpkg.com/three@0.140.0/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://unpkg.com/three@0.140.0/examples/jsm/postprocessing/RenderPass.js';
-import { GLTFLoader } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/loaders/GLTFLoader.js';
-
+import { TrackballControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/TrackballControls.js';
 
 class NetWordChart {
     constructor(config) {
@@ -15,10 +10,11 @@ class NetWordChart {
     }
     initializeChart() {
 
-        const classId = this.config.classId || "network-graph";
+        const classId = this.config.Id || "network-graph";
         const data = this.config.data || [];
-        const rotationY = this.config.rotationY || 0.002;
-        let serviceNodes, tableNodes, mixer;
+        const rotationY = this.config.rotationY || 0;
+        const rotateSpeed = this.config.rotateSpeed || 0;
+        let serviceNodes, tableNodes;
         let isClicked = false;
         let globalRotation = 0;
         let isRotating = false;
@@ -37,38 +33,31 @@ class NetWordChart {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
 
-
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
         });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
 
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.5;
-        controls.enablePan = false;
-        controls.minDistance = 10;
-        controls.maxDistance = 2000;
-
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
-
+        const particles = new THREE.Group();
 
         document.getElementById(classId).appendChild(renderer.domElement);
 
         // ==============================================================
         const loader = new FontLoader();
 
-
         const colors = d3.scaleOrdinal(d3.schemeCategory10);
-
+        const controls = new TrackballControls(camera, renderer.domElement);
+        controls.staticMoving = true;
+        controls.rotateSpeed = 4.0;
+        controls.panSpeed = 0.3;
 
         scene.fog = new THREE.FogExp2(0xD8D9DA, 0.05);
+
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-
-
 
         window.addEventListener('resize', onWindowResize);
         function onWindowResize() {
@@ -77,7 +66,6 @@ class NetWordChart {
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
         // ===============================================================
-
 
         function extractNodesAndLinks(data) {
             let nodes = [];
@@ -126,8 +114,6 @@ class NetWordChart {
 
         // ==============================================================
 
-
-
         function createVisualNodesAndLinks(nodes, links) {
             const totalNodes = nodes.length;
             const maxRadius = 5;
@@ -145,9 +131,13 @@ class NetWordChart {
                     const geometry = new THREE.SphereGeometry(0.35, 18, 10);
                     const labelCanvas = document.createElement('canvas');
                     const labelContext = labelCanvas.getContext('2d');
-                    const text = node.name.toUpperCase();
+
+                    let text = node.name.toUpperCase();
+                    if (text.length > 6) {
+                        text = text.slice(0, 6) + '...';
+                    }
                     const textWidth = labelContext.measureText(text).width;
-                    const textX = labelCanvas.width / 3.5 - textWidth / 1;
+                    const textX = labelCanvas.width / 3.5 - textWidth;
                     const textY = labelCanvas.height / 2 + 5;
                     labelContext.save();
                     labelContext.fillStyle = colors(node.id);
@@ -155,9 +145,22 @@ class NetWordChart {
                     labelContext.filter = "contrast(2)";
                     labelContext.filter = "contrast(2)";
                     labelContext.textBaseline = 'middle';
-                    labelContext.fillText(text, textX, textY);
-                    labelContext.rotate(Math.PI / 2);
+
+                    labelContext.fillText(text, textX - 5, textY);
                     labelContext.restore();
+
+                    labelContext.save();
+                    labelContext.translate(labelCanvas.width / 2 + 120, labelCanvas.height / 2);
+                    labelContext.rotate(Math.PI);
+
+                    labelContext.font = 'bold 21px Arial';
+                    labelContext.filter = "contrast(2)";
+                    labelContext.filter = "contrast(2)";
+                    labelContext.fillStyle = colors(node.id);
+                    labelContext.textBaseline = 'middle';
+                    labelContext.fillText(text, 0, 0);
+                    labelContext.restore();
+
                     const texture = new THREE.CanvasTexture(labelCanvas);
                     const material = new THREE.MeshBasicMaterial({ map: texture });
                     const sphere = new THREE.Mesh(geometry, material);
@@ -173,7 +176,6 @@ class NetWordChart {
                     allNodesGroup.add(cylinder);
                     node.cylinder = cylinder;
                     scene.add(allNodesGroup)
-
                     sphere.onClick = function () {
                         this.userData.isSelected = !this.userData.isSelected;
                         if (this.userData.isSelected) {
@@ -231,11 +233,10 @@ class NetWordChart {
                             });
 
                             if (!isRotating) {
-
                                 isRotating = true;
-                                const rotateDuration = 5000;
+                                const rotateDuration = rotateSpeed;
                                 const rotateAngle = (Math.PI * 2) - 0.4;
-                                const framesPerRotation = 1000;
+                                const framesPerRotation = rotateSpeed;
                                 const rotationIncrement = rotateAngle / framesPerRotation;
 
                                 const rotateInterval = setInterval(() => {
@@ -377,7 +378,7 @@ class NetWordChart {
                                 }, rotateDuration / framesPerRotation);
                             }
                         }
-                    };
+                    }
                 } else {
                     const x = sphereRadius * Math.cos(theta) * Math.sin(phi);
                     const y = sphereRadius * Math.cos(phi);
@@ -402,8 +403,6 @@ class NetWordChart {
                     node.sphere = sphere;
                     allNodesGroup.add(sphere)
                     scene.add(allNodesGroup)
-
-
                 }
             });
 
@@ -425,7 +424,7 @@ class NetWordChart {
                     );
 
                     const distance = sourcePosition.distanceTo(targetPosition);
-                    const geometry = new THREE.CylinderGeometry(0.01, 0.01, distance, 18);
+                    const geometry = new THREE.CylinderGeometry(0.001, 0.001, distance, 18);
                     const material = new THREE.MeshBasicMaterial({
                         color: new THREE.Color(colors(sourceNode.id)),
                     });
@@ -441,7 +440,6 @@ class NetWordChart {
                     scene.add(allNodesGroup)
                 }
             });
-
         };
 
         const { nodes, links } = extractNodesAndLinks(data);
@@ -459,7 +457,7 @@ class NetWordChart {
             legendContainer.style.padding = "15px"
             legendContainer.style.gridTemplateColumns = "repeat(4, 1fr)"
             legendContainer.style.gap = "8px"
-            legendContainer.style.background = "rgba(184, 184, 185, .2)"
+            legendContainer.style.background = "rgba(184, 184, 185, .1)"
             legendContainer.style.borderRadius = "8px"
             renderer.domElement.parentElement.appendChild(legendContainer);
 
@@ -476,6 +474,7 @@ class NetWordChart {
 
                 const label = document.createElement('span');
                 label.textContent = node.name;
+                label.style.color = `${colors(node.id)}`;
 
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
@@ -483,7 +482,6 @@ class NetWordChart {
             });
         }
         createLegend(nodes);
-
 
         function createLabel(text, color, paddingT) {
             const canvas = document.createElement('canvas');
@@ -540,6 +538,12 @@ class NetWordChart {
                     node.userData.shadowMesh.visible = false;
                 }
             });
+            nodes.forEach(node => {
+                if (node.type === 'service') {
+                    node.sphere.rotation.set(0, 0, 0);
+                    node.cylinder.rotation.set(0, 0, 0);
+                }
+            });
             allNodesGroup.children
                 .filter((other) => other.name === "link")
                 .forEach((n) => { n.material.visible = true; });
@@ -548,7 +552,6 @@ class NetWordChart {
             });
             isClicked = false;
         });
-
 
         // ================================================ 
 
@@ -595,15 +598,11 @@ class NetWordChart {
         }
         // ================================================ 
 
-
         const animate = () => {
             requestAnimationFrame(animate);
             renderer.setClearAlpha(1);
             renderer.setClearColor(0x072541);
-
-            if (mixer) {
-                mixer.update(0.01);
-            }
+            particles.rotation.y += 0.001
 
             if (!isClicked) {
                 scene.rotation.y += rotationY;
@@ -650,20 +649,9 @@ class NetWordChart {
                 const timeElapsed = currentTime - lastUpdateTime;
                 if (timeElapsed > 100) {
                     isControlChange = true;
-                    const direction = controls.target.clone().sub(camera.position).normalize();
                     serviceNodes.forEach((node) => {
-                        const angle = Math.atan2(direction.x, direction.z) + Math.PI;
-                        const angleX = Math.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z));
-
-                        node.sphere.rotation.y = angle;
-                        node.cylinder.rotation.y = angle;
-                        node.sphere.rotation.x = angleX;
-                        node.cylinder.rotation.x = angleX;
-                    });
-                    tableNodes.forEach((node) => {
-                        const angle = Math.atan2(direction.x, direction.z) + Math.PI;
-                        node.countLabel.rotation.y = angle;
-                        node.nameLabel.rotation.y = angle;
+                        node.sphere.lookAt(camera.position)
+                        node.cylinder.lookAt(camera.position)
                     });
                     setTimeout(() => {
                         isControlChange = false;
@@ -676,16 +664,16 @@ class NetWordChart {
             controls.addEventListener('start', () => {
                 isDraggingControls = true;
                 document.body.style.cursor = 'grab'
-
             });
             controls.addEventListener('end', () => {
                 isDraggingControls = false;
                 document.body.style.cursor = 'default'
             });
+            controls.update();
 
             renderer.render(scene, camera);
         };
         animate();
     }
 }
-export { NetWordChart, OrbitControls, TextGeometry, FontLoader, OutlinePass, EffectComposer, RenderPass, GLTFLoader }
+export { NetWordChart }

@@ -4,28 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network graph</title>
+    <title>🍊 Network graph</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap"
         rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.7.0/fonts/remixicon.css" rel="stylesheet">
 
     <style>
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Roboto', sans-serif;
-        }
-
-        .container h1 {
-            position: absolute;
-            background: -webkit-linear-gradient(90deg, rgba(193, 112, 247, 1) 0%, rgba(254, 87, 87, 1) 50%, rgba(240, 165, 59, 1) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            right: 20px;
-            bottom: 0;
-            font-weight: 700;
-            -webkit-text-stroke: 1px #fff;
+            background: #072541;
         }
 
         .legend-item {
@@ -49,11 +38,7 @@
 
 
 <body>
-    <div class="container">
-        <h1><i class="ri-layout-masonry-fill"></i> Network graph 3D.</h1>
-    </div>
     <div id="network-graph"></div>
-    <!-- <div id="legend-container"></div> -->
     <script type="importmap">
         {
             "imports": {
@@ -61,15 +46,15 @@
             }
         }
     </script>
-
     <script type="module" src="./network-graph.js"></script>
     <script type="module">
         import { NetWordChart } from './network-graph.js'
         d3.json("data.json").then(function (data) {
             const networkchart = new NetWordChart({
-                classId: "network-graph",
+                Id: "network-graph",
                 data: data,
                 rotationY: 0.001,
+                rotateSpeed: 600
             })
         })
     </script>
