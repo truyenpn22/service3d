@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { TextGeometry } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/geometries/TextGeometry.js';
 import { FontLoader } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/loaders/FontLoader.js';
 import { TrackballControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/TrackballControls.js';
+// import { OrbitControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/OrbitControls.js';
+
 
 class NetWordChart {
     constructor(config) {
@@ -14,6 +16,9 @@ class NetWordChart {
         const data = this.config.data || [];
         const rotationY = this.config.rotationY || 0;
         const rotateSpeed = this.config.rotateSpeed || 0;
+        const w = this.config.width || window.innerWidth;
+        const h = this.config.height || window.innerHeight;
+
         let serviceNodes, tableNodes;
         let isClicked = false;
         let globalRotation = 0;
@@ -27,21 +32,27 @@ class NetWordChart {
         // ==============================================================
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
         camera.position.z = 11;
-
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = w / h;
         camera.updateProjectionMatrix();
+
+        window.addEventListener('resize', onWindowResize);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+        }
 
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
         });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio, 2);
+        renderer.setSize(w, h, false);
 
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
-        const particles = new THREE.Group();
 
         document.getElementById(classId).appendChild(renderer.domElement);
 
@@ -54,23 +65,39 @@ class NetWordChart {
         controls.rotateSpeed = 4.0;
         controls.panSpeed = 0.3;
 
-        scene.fog = new THREE.FogExp2(0xD8D9DA, 0.05);
+        // const controls = new OrbitControls(camera, renderer.domElement);
+        // controls.enableDamping = true;
+        // controls.dampingFactor = 0.5;
+        // controls.enablePan = false;
+        // controls.minDistance = 10;
+        // controls.maxDistance = 2000;
 
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
 
-        window.addEventListener('resize', onWindowResize);
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        // ==============================================================
+
+
+        const ambientLight = new THREE.AmbientLight(0x000000);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xffffff, 0.2);
+        pointLight1.position.set(0, 200, 0);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xffffff, 0.2);
+        pointLight2.position.set(100, 200, 100);
+        scene.add(pointLight2);
+
+        const pointLight3 = new THREE.PointLight(0xffffff, 0.2);
+        pointLight3.position.set(-100, -200, -100);
+        scene.add(pointLight3);
+
+
         // ===============================================================
+
 
         function extractNodesAndLinks(data) {
             let nodes = [];
             let links = [];
-
 
             data.webServices.forEach(service => {
                 let serviceNode = nodes.find(node => node.id === service.id);
@@ -83,7 +110,6 @@ class NetWordChart {
                     };
                     nodes.push(serviceNode);
                 }
-
 
                 service.relatedTables.forEach(table => {
                     let tableNode = nodes.find(node => node.id === table.id);
@@ -117,8 +143,10 @@ class NetWordChart {
         function createVisualNodesAndLinks(nodes, links) {
             const totalNodes = nodes.length;
             const maxRadius = 5;
-            const minRadius = 3;
+            const minRadius = 4;
             const sphereRadius = Math.max(minRadius, Math.min(maxRadius, totalNodes / 10));
+            scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 5 ? 0.05 : 0.03);
+
             nodes.forEach((node, index) => {
                 const phi = Math.acos(1 - (2 * index + 1) / totalNodes);
                 const goldenRatio = (1 + Math.sqrt(5)) / 2;
@@ -128,7 +156,7 @@ class NetWordChart {
                     const x = sphereRadius * Math.cos(theta) * Math.sin(phi);
                     const y = sphereRadius * Math.cos(phi);
                     const z = sphereRadius * Math.sin(theta) * Math.sin(phi);
-                    const geometry = new THREE.SphereGeometry(0.35, 18, 10);
+                    const geometry = new THREE.SphereGeometry(sphereRadius === 5 ? 0.35 : 0.45, 18, 20);
                     const labelCanvas = document.createElement('canvas');
                     const labelContext = labelCanvas.getContext('2d');
 
@@ -161,6 +189,8 @@ class NetWordChart {
                     labelContext.fillText(text, 0, 0);
                     labelContext.restore();
 
+
+
                     const texture = new THREE.CanvasTexture(labelCanvas);
                     const material = new THREE.MeshBasicMaterial({ map: texture });
                     const sphere = new THREE.Mesh(geometry, material);
@@ -168,9 +198,9 @@ class NetWordChart {
                     node.sphere = sphere;
                     allNodesGroup.add(sphere);
 
-                    const cylinderGeometry = new THREE.CylinderGeometry(0.37, 0.37, 0.02, 14);
+                    const cylinderGeometry = new THREE.CylinderGeometry(sphereRadius === 5 ? 0.38 : 0.5, sphereRadius === 5 ? 0.38 : 0.5, 0.02, 50);
                     cylinderGeometry.rotateX(Math.PI / 2);
-                    const cylinderMaterial = new THREE.MeshBasicMaterial({ color: colors(node.id) });
+                    const cylinderMaterial = new THREE.MeshToonMaterial({ color: colors(node.id), emissive: colors(node.id) });
                     const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
                     cylinder.position.set(x, y, z);
                     allNodesGroup.add(cylinder);
@@ -178,11 +208,15 @@ class NetWordChart {
                     scene.add(allNodesGroup)
                     sphere.onClick = function () {
                         this.userData.isSelected = !this.userData.isSelected;
+                        if (isRotating || isControlChange) {
+                            return;
+                        }
                         if (this.userData.isSelected) {
-                            const shadowGeometry = new THREE.SphereGeometry(0.45, 18, 10);
+                            const shadowGeometry = new THREE.SphereGeometry(sphereRadius === 5 ? 0.45 : 0.6, 18, 20);
                             shadowGeometry.rotateX(Math.PI / 2);
-                            const shadowMaterial = new THREE.MeshBasicMaterial({
+                            const shadowMaterial = new THREE.MeshToonMaterial({
                                 color: colors(node.id),
+                                emissive: colors(node.id),
                                 transparent: true,
                                 opacity: 0.5,
                             });
@@ -199,8 +233,10 @@ class NetWordChart {
                                         const targetPosition = targetNode.sphere.position;
                                         const distance = this.position.distanceTo(targetPosition);
                                         const geometry = new THREE.CylinderGeometry(0.05, 0.05, distance, 18);
-                                        const material = new THREE.MeshBasicMaterial({
-                                            color: new THREE.Color(colors(node.id)),
+                                        const material = new THREE.MeshToonMaterial({
+                                            color: colors(node.id),
+                                            emissive: colors(node.id),
+
                                         });
                                         const line = new THREE.Mesh(geometry, material);
                                         connectingLines.push(line);
@@ -218,8 +254,9 @@ class NetWordChart {
 
                                         const shadowGeometry = new THREE.SphereGeometry(0.26, 18, 12);
                                         shadowGeometry.rotateX(Math.PI / 2);
-                                        const shadowMaterial = new THREE.MeshBasicMaterial({
+                                        const shadowMaterial = new THREE.MeshToonMaterial({
                                             color: colors(targetNode.id),
+                                            emissive: colors(targetNode.id),
                                             transparent: true,
                                             opacity: 0.5,
                                         });
@@ -238,7 +275,7 @@ class NetWordChart {
                                 const rotateAngle = (Math.PI * 2) - 0.4;
                                 const framesPerRotation = rotateSpeed;
                                 const rotationIncrement = rotateAngle / framesPerRotation;
-
+                                controls.enabled = false;
                                 const rotateInterval = setInterval(() => {
                                     if (globalRotation >= rotateAngle) {
                                         clearInterval(rotateInterval);
@@ -253,17 +290,18 @@ class NetWordChart {
                                         allNodesGroup.visible = false
                                         allNodesGroupDetails.visible = true
 
-                                        const newGeometry = new THREE.SphereGeometry(0.8, 18, 10);
-                                        const CylinderGeometry = new THREE.CylinderGeometry(0.85, 0.5, 0.12, 18);
+                                        const newGeometry = new THREE.SphereGeometry(0.8, 18, 20);
+                                        const CylinderGeometry = new THREE.CylinderGeometry(0.85, 0.5, 0.12, 50);
                                         CylinderGeometry.rotateX(Math.PI / 2);
-                                        const CylinderGeometryMaterial = new THREE.MeshBasicMaterial({ color: colors(node.id), });
+                                        const CylinderGeometryMaterial = new THREE.MeshToonMaterial({ color: colors(node.id), emissive: colors(node.id) });
                                         const CylinderGeometryMesh = new THREE.Mesh(CylinderGeometry, CylinderGeometryMaterial);
                                         allNodesGroupDetails.add(CylinderGeometryMesh);
 
-                                        const shadowGeometry = new THREE.CylinderGeometry(1, 1, 0.12, 18);
+                                        const shadowGeometry = new THREE.CylinderGeometry(1, 1, 0.12, 50);
                                         shadowGeometry.rotateX(Math.PI / 2);
-                                        const shadowMaterial = new THREE.MeshBasicMaterial({
+                                        const shadowMaterial = new THREE.MeshToonMaterial({
                                             color: colors(node.id),
+                                            emissive: colors(node.id),
                                             transparent: true,
                                             opacity: 0.5,
                                         });
@@ -305,14 +343,15 @@ class NetWordChart {
                                             const z = 0;
 
                                             const geometry = new THREE.SphereGeometry(0.3, 18, 12);
-                                            const material = new THREE.MeshBasicMaterial({ color: colors(targetNode.id) });
+                                            const material = new THREE.MeshStandardMaterial({ color: colors(targetNode.id), emissive: colors(targetNode.id), roughness: 0.5, metalness: 2 });
                                             const sphere = new THREE.Mesh(geometry, material);
                                             sphere.position.set(x, y, z);
                                             allNodesGroupDetails.add(sphere);
 
-                                            const shadowGeometry = new THREE.SphereGeometry(0.4, 18, 12);
-                                            const shadowMaterial = new THREE.MeshBasicMaterial({
+                                            const shadowGeometry = new THREE.SphereGeometry(0.42, 18, 12);
+                                            const shadowMaterial = new THREE.MeshToonMaterial({
                                                 color: colors(targetNode.id),
+                                                emissive: colors(targetNode.id),
                                                 transparent: true,
                                                 opacity: 0.5,
                                             });
@@ -385,7 +424,7 @@ class NetWordChart {
                     const z = sphereRadius * Math.sin(theta) * Math.sin(phi);
 
                     const geometry = new THREE.SphereGeometry(0.2, 18, 12);
-                    const material = new THREE.MeshBasicMaterial({ color: colors(node.id), });
+                    const material = new THREE.MeshStandardMaterial({ color: colors(node.id), emissive: colors(node.id), roughness: 0.5, metalness: 2 });
 
                     const sphere = new THREE.Mesh(geometry, material);
 
@@ -479,6 +518,7 @@ class NetWordChart {
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
                 legendContainer.appendChild(legendItem);
+
             });
         }
         createLegend(nodes);
@@ -527,7 +567,6 @@ class NetWordChart {
         button.style.backgroundColor = 'white';
         container.appendChild(button);
         button.addEventListener('click', () => {
-            scene.fog = new THREE.FogExp2(0xD8D9DA, 0.048);
             allNodesGroup.rotation.y = 0;
             allNodesGroup.visible = true;
             allNodesGroupDetails.visible = false;
@@ -539,6 +578,11 @@ class NetWordChart {
                 }
             });
             nodes.forEach(node => {
+                const totalNodes = nodes.length;
+                const maxRadius = 5;
+                const minRadius = 4;
+                const sphereRadius = Math.max(minRadius, Math.min(maxRadius, totalNodes / 10));
+                scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 5 ? 0.05 : 0.03);
                 if (node.type === 'service') {
                     node.sphere.rotation.set(0, 0, 0);
                     node.cylinder.rotation.set(0, 0, 0);
@@ -551,6 +595,7 @@ class NetWordChart {
                 line.visible = false;
             });
             isClicked = false;
+            controls.enabled = true;
         });
 
         // ================================================ 
@@ -562,10 +607,11 @@ class NetWordChart {
             renderer.domElement.addEventListener('mousemove', onDocumentMouseMove);
 
             function onDocumentClick(event) {
-                if (isClicked || isDraggingControls) return;
+                if (isClicked || isDraggingControls) return
 
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
                 if (!clickedObject) return;
+
                 clickedObject.onClick();
             }
 
@@ -591,8 +637,8 @@ class NetWordChart {
 
             function getMousePosition(event) {
                 const mouse = new THREE.Vector2();
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                mouse.x = (event.clientX / w) * 2 - 1;
+                mouse.y = -(event.clientY / h) * 2 + 1;
                 return mouse;
             }
         }
@@ -602,7 +648,6 @@ class NetWordChart {
             requestAnimationFrame(animate);
             renderer.setClearAlpha(1);
             renderer.setClearColor(0x072541);
-            particles.rotation.y += 0.001
 
             if (!isClicked) {
                 scene.rotation.y += rotationY;
