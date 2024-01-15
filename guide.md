@@ -38,23 +38,27 @@ This dataset provides an overview of various web services along with their assoc
 2. The network graph will be drawn using data from `data.json`.
 
 ## Code Explanation
-* `classId`: "network-graph": Specifies the HTML element's ID where the network graph will be rendered.
-* `data`: Passes the loaded data to be used for generating the network graph.
-* `rotationY`: 0.002: Potentially an option for the chart to rotate around the Y-axis with a specified rate.
-* `rotateSpeed`: Customize rotation speed when clicking nodeService.
+
 ```
 <script type="module">
     import { NetWordChart } from './network-graph.js'
     d3.json("data.json").then(function (data) {
         const networkchart = new NetWordChart({
-            classId: "network-graph",
-            data: data,
-            rotationY: 0.002,
-            rotateSpeed: 700
+            ID (required): "network-graph",
+            data (optional): data,
+            rotationY (optional): 0.002,
+            rotateSpeed (optional): 700,
+            lineSize (optional): 0.001,
         })
     })
 </script>
 ```
+
+* `classId`: "network-graph": Specifies the HTML element's ID where the network graph will be rendered.
+* `data`: Passes the loaded data to be used for generating the network graph.
+* `rotationY`: 0.002: Potentially an option for the chart to rotate around the Y-axis with a specified rate.If not set default value is 0.001.
+* `rotateSpeed`: Customize rotation speed when clicking nodeService.If not set default value is 800.
+* `lineSize` : Customize the size of the lines.If not set default value is 0.001,
 
 ## Libraries and Technologies
 

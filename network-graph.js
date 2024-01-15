@@ -14,7 +14,7 @@ class NetWordChart {
 
         const classId = this.config.Id || "network-graph";
         const data = this.config.data || [];
-        const rotationY = this.config.rotationY || 0;
+        const rotationY = this.config.rotationY || 0.001;
         const rotateSpeed = this.config.rotateSpeed || 800;
         const lineSize = this.config.lineSize || 0.001
 
@@ -28,8 +28,9 @@ class NetWordChart {
         let connectingLines = [];
         let lastUpdateTime = Date.now();
         let isControlChange = false;
-        let isDraggingControls = false;
         let fontUrl = "https://unpkg.com/three@0.77.0/examples/fonts/helvetiker_bold.typeface.json";
+        let isDraggingControls = false;
+        let serviceNodeLookup = {};
 
         // ==============================================================
 
@@ -67,7 +68,7 @@ class NetWordChart {
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+        controls.dampingFactor = 0.04;
         controls.enablePan = false;
         controls.minDistance = 2;
         controls.maxDistance = 2000;
@@ -205,6 +206,8 @@ class NetWordChart {
                     allNodesGroup.add(cylinder);
                     node.cylinder = cylinder;
                     scene.add(allNodesGroup)
+                    serviceNodeLookup[node.id] = sphere;
+
                     sphere.onClick = function () {
                         this.userData.isSelected = !this.userData.isSelected;
                         if (isRotating || isControlChange) {
@@ -510,6 +513,7 @@ class NetWordChart {
             const legendItems = nodes.filter(node => node.type === 'service');
             legendItems.forEach(node => {
                 const legendItem = document.createElement('div');
+                legendItem.style.cursor = 'pointer';
                 legendItem.classList.add('legend-item');
 
                 const colorBox = document.createElement('div');
@@ -525,6 +529,12 @@ class NetWordChart {
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
                 legendContainer.appendChild(legendItem);
+                legendItem.addEventListener('click', () => {
+                    const serviceNode = serviceNodeLookup[node.id];
+                    if (serviceNode && serviceNode.onClick) {
+                        serviceNode.onClick();
+                    }
+                });
 
             });
         }
@@ -589,7 +599,9 @@ class NetWordChart {
                 const maxRadius = 5;
                 const minRadius = 4;
                 const sphereRadius = Math.max(minRadius, Math.min(maxRadius, totalNodes / 10));
+
                 scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 5 ? 0.05 : 0.03);
+
                 if (node.type === 'service') {
                     node.sphere.rotation.set(0, 0, 0);
                     node.cylinder.rotation.set(0, 0, 0);
@@ -601,8 +613,12 @@ class NetWordChart {
             connectingLines.forEach((line) => {
                 line.visible = false;
             });
+
+
             isClicked = false;
             controls.enabled = true;
+            controls.reset();
+
         });
 
         // ================================================ 
@@ -632,11 +648,14 @@ class NetWordChart {
             function getObjectFromMouseEvent(event, nodes) {
                 const mouse = getMousePosition(event);
                 const intersects = getIntersectingObjects(mouse, nodes);
-                return intersects.length > 0 ? intersects[0].object : null;
+
+                const serviceIntersects = intersects.filter(intersect =>
+                    nodes.some(node => node.type === 'service' && node.sphere === intersect.object)
+                );
+
+                return serviceIntersects.length > 0 ? serviceIntersects[0].object : null;
             }
-
             function getIntersectingObjects(mouse, nodes) {
-
                 const raycaster = new THREE.Raycaster();
                 raycaster.setFromCamera(mouse, camera);
                 return raycaster.intersectObjects(nodes.map(node => node.sphere));
@@ -665,9 +684,7 @@ class NetWordChart {
                     node.sphere.rotation.y -= rotationY;
                     node.cylinder.rotation.y -= rotationY;
 
-
                     if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
-
                         const shadowMesh = node.sphere.userData.shadowMesh;
                         shadowMesh.position.copy(node.sphere.position);
                         shadowMesh.rotation.copy(node.sphere.rotation);
@@ -699,22 +716,19 @@ class NetWordChart {
                 controls.reset();
             }
             controls.addEventListener('change', () => {
+
                 const currentTime = Date.now();
                 const timeElapsed = currentTime - lastUpdateTime;
+                const cameraPosition = camera.position.clone();
+
+                const rotationMatrix = new THREE.Matrix4();
+                rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
                 if (timeElapsed > 100) {
-                    const cameraPosition = camera.position.clone();
-
-                    const rotationMatrix = new THREE.Matrix4();
-                    rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
-
                     for (let i = 0; i < serviceNodes.length; i++) {
                         const node = serviceNodes[i];
                         node.sphere.quaternion.setFromRotationMatrix(rotationMatrix);
-                        node.sphere.scale.x = Math.abs(node.sphere.scale.x) * Math.sign(node.sphere.scale.x);
                         node.cylinder.quaternion.setFromRotationMatrix(rotationMatrix);
-                        node.cylinder.scale.x = Math.abs(node.cylinder.scale.x) * Math.sign(node.cylinder.scale.x);
                     }
-
                     setTimeout(() => {
                         isControlChange = false;
                     }, 1000);
