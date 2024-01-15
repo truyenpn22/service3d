@@ -56,7 +56,7 @@ This dataset provides an overview of various web services along with their assoc
 
 * `classId`: "network-graph": Specifies the HTML element's ID where the network graph will be rendered.
 * `data`: Passes the loaded data to be used for generating the network graph.
-* `rotationY`: 0.002: Potentially an option for the chart to rotate around the Y-axis with a specified rate.If not set default value is 0.001.
+* `rotationY`: Potentially an option for the chart to rotate around the Y-axis with a specified rate.If not set default value is 0.001.
 * `rotateSpeed`: Customize rotation speed when clicking nodeService.If not set default value is 800.
 * `lineSize` : Customize the size of the lines.If not set default value is 0.001,
 
