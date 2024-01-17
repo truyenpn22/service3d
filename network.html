@@ -6,15 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍊 Network graph</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap"
         rel="stylesheet">
+
 
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Roboto', sans-serif;
-            background: #121f3a;
+            font-family: "Noto Sans KR", sans-serif;
+            object-fit: cover;
+            background: #071238;
         }
 
         .legend-item {
@@ -33,12 +35,49 @@
             height: 12px;
             margin-right: 5px;
         }
+
+        #network-graph {
+            position: absolute;
+            display: grid;
+            place-items: center;
+            background-color: rgba(184, 184, 185, .12);
+            margin: 13px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-direction: row-reverse;
+            width: 100%;
+            background-color: #32427B;
+        }
+
+        .button-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .button-next {
+            background-color: #1e1f21;
+            margin: 5px;
+            border-radius: 5px;
+        }
+
+        .button-zoom {
+            background-color: #1e1f21;
+            margin: 5px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 
 
 <body>
-    <div id="network-graph"></div>
+    <div id="network-graph">
+    </div>
     <script type="importmap">
         {
             "imports": {
@@ -56,6 +95,8 @@
                 rotationY: 0.001,
                 rotateSpeed: 400,
                 lineSize: 0.001,
+                width: 350,
+                height: 300,
             })
         })
     </script>

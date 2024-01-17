@@ -4,7 +4,7 @@ import { FontLoader } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/loa
 // import { TrackballControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/TrackballControls.js';
 import { OrbitControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/OrbitControls.js';
 
-
+let rotateInterval;
 class NetWordChart {
     constructor(config) {
         this.config = config;
@@ -31,22 +31,21 @@ class NetWordChart {
         let fontUrl = "https://unpkg.com/three@0.77.0/examples/fonts/helvetiker_bold.typeface.json";
         let isDraggingControls = false;
         let serviceNodeLookup = {};
+        let isZoomed = false;
+        let targetWidth = w;
+        let targetHeight = h;
+        let currentWidth = w;
+        let currentHeight = h;
+        let legendContainer;
 
         // ==============================================================
 
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-        camera.position.z = 11;
+        camera.position.z = 12;
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
 
-        window.addEventListener('resize', onWindowResize);
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-
-        }
 
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
@@ -58,11 +57,17 @@ class NetWordChart {
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
 
-        document.getElementById(classId).appendChild(renderer.domElement);
+        const containerMain = document.getElementById(classId)
+
+        const container = document.createElement('div');
+        container.classList.add('container');
+
+
+        containerMain.appendChild(container)
+        containerMain.appendChild(renderer.domElement);
 
         // ==============================================================
         const loader = new FontLoader();
-
         const colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 
@@ -91,6 +96,7 @@ class NetWordChart {
         const pointLight3 = new THREE.PointLight(0xffffff, 0.2);
         pointLight3.position.set(-100, -200, -100);
         scene.add(pointLight3);
+
 
 
         // ===============================================================
@@ -143,10 +149,10 @@ class NetWordChart {
 
         function createVisualNodesAndLinks(nodes, links) {
             const totalNodes = nodes.length;
-            const maxRadius = 5;
-            const minRadius = 4;
+            const maxRadius = 6;
+            const minRadius = 6.2;
             const sphereRadius = Math.max(minRadius, Math.min(maxRadius, totalNodes / 10));
-            scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 5 ? 0.05 : 0.03);
+            scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 6 ? 0.05 : 0.03);
 
             nodes.forEach((node, index) => {
                 const phi = Math.acos(1 - (2 * index + 1) / totalNodes);
@@ -157,7 +163,7 @@ class NetWordChart {
                     const x = sphereRadius * Math.cos(theta) * Math.sin(phi);
                     const y = sphereRadius * Math.cos(phi);
                     const z = sphereRadius * Math.sin(theta) * Math.sin(phi);
-                    const geometry = new THREE.SphereGeometry(sphereRadius === 5 ? 0.35 : 0.45, 18, 20);
+                    const geometry = new THREE.SphereGeometry(sphereRadius === 61 ? 0.5 : 0.6, 18, 20);
                     const labelCanvas = document.createElement('canvas');
                     const labelContext = labelCanvas.getContext('2d');
 
@@ -190,7 +196,6 @@ class NetWordChart {
                     labelContext.restore();
 
 
-
                     const texture = new THREE.CanvasTexture(labelCanvas);
                     const material = new THREE.MeshBasicMaterial({ map: texture });
                     const sphere = new THREE.Mesh(geometry, material);
@@ -198,7 +203,7 @@ class NetWordChart {
                     node.sphere = sphere;
                     allNodesGroup.add(sphere);
 
-                    const cylinderGeometry = new THREE.CylinderGeometry(sphereRadius === 5 ? 0.38 : 0.5, sphereRadius === 5 ? 0.38 : 0.5, 0.02, 50);
+                    const cylinderGeometry = new THREE.CylinderGeometry(sphereRadius === 6 ? 0.55 : 0.65, sphereRadius === 6 ? 0.38 : 0.5, 0.02, 50);
                     cylinderGeometry.rotateX(Math.PI / 2);
                     const cylinderMaterial = new THREE.MeshToonMaterial({ color: colors(node.id), emissive: colors(node.id) });
                     const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
@@ -215,7 +220,7 @@ class NetWordChart {
                         }
                         if (this.userData.isSelected) {
 
-                            const shadowGeometry = new THREE.SphereGeometry(sphereRadius === 5 ? 0.45 : 0.6, 18, 20);
+                            const shadowGeometry = new THREE.SphereGeometry(sphereRadius === 6 ? 0.65 : 0.75, 18, 20);
                             shadowGeometry.rotateX(Math.PI / 2);
                             const shadowMaterial = new THREE.MeshToonMaterial({
                                 color: colors(node.id),
@@ -281,7 +286,9 @@ class NetWordChart {
                                 const framesPerRotation = rotateSpeed;
                                 const rotationIncrement = rotateAngle / framesPerRotation;
                                 controls.enabled = false;
-                                const rotateInterval = setInterval(() => {
+                                next.style.pointerEvents = 'none'
+
+                                rotateInterval = setInterval(() => {
                                     if (globalRotation >= rotateAngle) {
                                         clearInterval(rotateInterval);
                                         isRotating = false;
@@ -290,21 +297,21 @@ class NetWordChart {
                                         this.userData.isSelected = !this.userData.isSelected;
                                         isClicked = true;
                                         scene.fog = new THREE.FogExp2(0x000000, 0);
-
-
+                                        next.style.pointerEvents = null
 
                                         allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = false; });
                                         allNodesGroup.visible = false
                                         allNodesGroupDetails.visible = true
 
-                                        const newGeometry = new THREE.SphereGeometry(0.8, 18, 20);
-                                        const CylinderGeometry = new THREE.CylinderGeometry(0.85, 0.5, 0.12, 50);
+
+                                        const newGeometry = new THREE.SphereGeometry(1.5, 18, 20);
+                                        const CylinderGeometry = new THREE.CylinderGeometry(1.6, 0.5, 0.12, 50);
                                         CylinderGeometry.rotateX(Math.PI / 2);
                                         const CylinderGeometryMaterial = new THREE.MeshToonMaterial({ color: colors(node.id), emissive: colors(node.id) });
                                         const CylinderGeometryMesh = new THREE.Mesh(CylinderGeometry, CylinderGeometryMaterial);
                                         allNodesGroupDetails.add(CylinderGeometryMesh);
 
-                                        const shadowGeometry = new THREE.CylinderGeometry(1, 1, 0.12, 50);
+                                        const shadowGeometry = new THREE.CylinderGeometry(1.8, 1.8, 0.12, 50);
                                         shadowGeometry.rotateX(Math.PI / 2);
                                         const shadowMaterial = new THREE.MeshToonMaterial({
                                             color: colors(node.id),
@@ -349,13 +356,13 @@ class NetWordChart {
                                             const y = sphereRadius * Math.sin(theta + offset);
                                             const z = 0;
 
-                                            const geometry = new THREE.SphereGeometry(0.3, 18, 12);
+                                            const geometry = new THREE.SphereGeometry(0.5, 18, 12);
                                             const material = new THREE.MeshStandardMaterial({ color: colors(targetNode.id), emissive: colors(targetNode.id), roughness: 0.5, metalness: 2 });
                                             const sphere = new THREE.Mesh(geometry, material);
                                             sphere.position.set(x, y, z);
                                             allNodesGroupDetails.add(sphere);
 
-                                            const shadowGeometry = new THREE.SphereGeometry(0.42, 18, 12);
+                                            const shadowGeometry = new THREE.SphereGeometry(0.7, 18, 12);
                                             const shadowMaterial = new THREE.MeshToonMaterial({
                                                 color: colors(targetNode.id),
                                                 emissive: colors(targetNode.id),
@@ -370,8 +377,8 @@ class NetWordChart {
                                             const sourcePosition = new THREE.Vector3(0, 0, 0);
                                             const targetPosition = new THREE.Vector3(x, y, z);
                                             const distance = sourcePosition.distanceTo(targetPosition);
-                                            const lineGeometry = new THREE.CylinderGeometry(0.05, 0.05, distance, 18);
-                                            const lineMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(colors(sourceNode.id)) });
+                                            const lineGeometry = new THREE.CylinderGeometry(0.08, 0.08, distance, 18);
+                                            const lineMaterial = new THREE.MeshToonMaterial({ color: new THREE.Color(colors(sourceNode.id)), emissive: new THREE.Color(colors(sourceNode.id)) });
                                             const line = new THREE.Mesh(lineGeometry, lineMaterial);
 
                                             const direction = new THREE.Vector3().subVectors(targetPosition, sourcePosition);
@@ -384,30 +391,30 @@ class NetWordChart {
                                             allNodesGroupDetails.add(line);
                                             scene.add(allNodesGroupDetails);
                                             loader.load(fontUrl, function (font) {
-                                                const textMaterial = new THREE.MeshBasicMaterial({ color: colors(targetNode.id) });
+                                                const textMaterial = new THREE.MeshToonMaterial({ color: colors(targetNode.id), emissive: colors(targetNode.id) });
                                                 const countTextMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
                                                 const countTextGeometry = new TextGeometry(targetNode.count.toString(), {
                                                     font: font,
-                                                    size: 0.4,
+                                                    size: 0.8,
                                                     height: 0.02,
                                                 });
                                                 const countText = new THREE.Mesh(countTextGeometry, countTextMaterial);
                                                 countTextGeometry.computeBoundingBox();
                                                 const textWidthCount = countTextGeometry.boundingBox.max.x - countTextGeometry.boundingBox.min.x;
 
-                                                countText.position.set(x - textWidthCount / 2, y + 1.2, 0.1);
+                                                countText.position.set(x - textWidthCount / 2, y + 2, 0.1);
                                                 allNodesGroupDetails.add(countText);
 
                                                 const nameTextGeometry = new TextGeometry(targetNode.name.toUpperCase(), {
                                                     font: font,
-                                                    size: 0.4,
+                                                    size: 0.8,
                                                     height: 0.02,
                                                 });
                                                 const nameText = new THREE.Mesh(nameTextGeometry, textMaterial);
                                                 nameTextGeometry.computeBoundingBox();
                                                 const textWidth = nameTextGeometry.boundingBox.max.x - nameTextGeometry.boundingBox.min.x;
-                                                nameText.position.set(x - textWidth / 2, y + 0.55, 0.1);
+                                                nameText.position.set(x - textWidth / 2, y + 0.8, 0.1);
 
                                                 allNodesGroupDetails.add(nameText);
                                             });
@@ -437,11 +444,11 @@ class NetWordChart {
 
                     const sphere = new THREE.Mesh(geometry, material);
 
-                    const countLabel = createLabel(node.count, "white", 20);
+                    const countLabel = createLabel(node.count, "#ffffff", 18);
                     countLabel.position.set(x, y + 1, z);
                     allNodesGroup.add(countLabel)
 
-                    const nameLabel = createLabel(node.name.toUpperCase(), colors(node.id), 26);
+                    const nameLabel = createLabel(node.name.toUpperCase(), colors(node.id), 20);
                     nameLabel.position.set(x, y + 0.3, z);
                     allNodesGroup.add(nameLabel)
                     node.countLabel = countLabel;
@@ -494,62 +501,16 @@ class NetWordChart {
         createVisualNodesAndLinks(nodes, links);
         addEventListeners()
 
-
-        function createLegend(nodes) {
-            const legendContainer = document.createElement('div');
-
-            legendContainer.style.position = "absolute"
-            legendContainer.style.top = "20px"
-            legendContainer.style.left = "20px"
-            legendContainer.style.border = "1px solid #ffffff"
-            legendContainer.style.display = "grid"
-            legendContainer.style.padding = "15px"
-            legendContainer.style.gridTemplateColumns = "repeat(4, 1fr)"
-            legendContainer.style.gap = "8px"
-            legendContainer.style.background = "rgba(184, 184, 185, .1)"
-            legendContainer.style.borderRadius = "8px"
-            renderer.domElement.parentElement.appendChild(legendContainer);
-
-            const legendItems = nodes.filter(node => node.type === 'service');
-            legendItems.forEach(node => {
-                const legendItem = document.createElement('div');
-                legendItem.style.cursor = 'pointer';
-                legendItem.classList.add('legend-item');
-
-                const colorBox = document.createElement('div');
-                colorBox.classList.add('legend-color');
-                colorBox.style.backgroundColor = "black";
-                colorBox.style.border = `2px solid ${colors(node.id)}`;
-                colorBox.style.boxShadow = `0px 0px 15px ${colors(node.id)}`;
-
-                const label = document.createElement('span');
-                label.textContent = node.name;
-                label.style.color = `${colors(node.id)}`;
-
-                legendItem.appendChild(colorBox);
-                legendItem.appendChild(label);
-                legendContainer.appendChild(legendItem);
-                legendItem.addEventListener('click', () => {
-                    const serviceNode = serviceNodeLookup[node.id];
-                    if (serviceNode && serviceNode.onClick) {
-                        serviceNode.onClick();
-                    }
-                });
-
-            });
-        }
-        createLegend(nodes);
-
         function createLabel(text, color, paddingT) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const fontSize = 15;
+            const fontSize = 30;
             const padding = paddingT || 30;
             const font = `bold ${fontSize}px Arial`;
             context.font = font;
             const textMetrics = context.measureText(text);
             const width = textMetrics.width + padding * 2;
-            const height = fontSize + padding * 2;
+            const height = fontSize + padding * 3;
             canvas.width = width;
             canvas.height = height;
 
@@ -566,24 +527,79 @@ class NetWordChart {
             const material = new THREE.SpriteMaterial({ map: texture });
             const label = new THREE.Sprite(material);
             label.rotation.x = Math.PI;
-            label.scale.set(width / height, 0.8, 1);
+            label.scale.set(width / height, 0.9, 1);
             return label;
         }
 
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.top = '20px';
-        container.style.right = '20px';
-        container.style.zIndex = '1';
-        renderer.domElement.parentElement.appendChild(container);
-        const button = document.createElement('button');
-        button.textContent = 'Play - Rotate';
-        button.style.width = '150px';
-        button.style.padding = '8px';
-        button.style.cursor = 'pointer';
-        button.style.backgroundColor = 'white';
-        container.appendChild(button);
-        button.addEventListener('click', () => {
+
+        function createLegend(nodes) {
+            legendContainer = document.createElement('div');
+            legendContainer.style.display = "grid"
+            legendContainer.style.padding = "8px"
+            legendContainer.style.gridTemplateColumns = "repeat(4, 1fr)"
+            legendContainer.style.width = w + "px"
+            legendContainer.style.gap = "3px"
+            legendContainer.style.whiteSpace = "nowrap"
+            legendContainer.style.overflow = "hidden"
+            legendContainer.style.background = "rgba(201, 201, 201, 0.04)"
+            legendContainer.style.transition = 'opacity 0.5s'
+
+            renderer.domElement.parentElement.appendChild(legendContainer);
+
+            const legendItems = nodes.filter(node => node.type === 'service');
+            legendItems.forEach(node => {
+                const legendItem = document.createElement('div');
+                legendItem.style.cursor = 'pointer';
+                legendItem.classList.add('legend-item');
+
+                const colorBox = document.createElement('div');
+                colorBox.classList.add('legend-color');
+                colorBox.style.backgroundColor = "black";
+                colorBox.style.border = `2px solid ${colors(node.id)}`;
+                colorBox.style.boxShadow = `0px 0px 15px ${colors(node.id)}`;
+
+                const label = document.createElement('span');
+                label.textContent = node.name;
+                label.style.color = '#ffffff';
+
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(label);
+                legendContainer.appendChild(legendItem);
+                legendItem.addEventListener('click', () => {
+                    const serviceNode = serviceNodeLookup[node.id];
+                    if (serviceNode && serviceNode.onClick) {
+                        serviceNode.onClick();
+                    }
+                });
+
+            });
+        }
+        createLegend(nodes);
+
+        // ================================================ 
+
+        const buttonItem = document.createElement('div')
+        buttonItem.classList.add('button-item')
+        container.appendChild(buttonItem)
+
+        const geomatry = document.createElement('div')
+        geomatry.innerHTML = '<img  src="http://demo.idrsoft.com/apm/assets/images/ic_DBservicer.png" alt="geomatry">'
+        geomatry.style.paddingLeft = '10px'
+        container.appendChild(geomatry)
+
+        // ================================================ 
+
+        const next = document.createElement('div')
+        next.classList.add('button-next');
+        next.innerHTML = '<img  src="http://demo.idrsoft.com/apm/assets/images/next.svg" alt="next">'
+        next.style.width = '20px'
+        next.style.height = '20px'
+        next.style.padding = '8px'
+        next.style.cursor = 'pointer'
+        next.style.pointerEvents = 'none'
+        buttonItem.appendChild(next)
+        next.addEventListener('click', () => {
+
             allNodesGroup.rotation.y = 0;
             allNodesGroup.visible = true;
             allNodesGroupDetails.visible = false;
@@ -600,7 +616,7 @@ class NetWordChart {
                 const minRadius = 4;
                 const sphereRadius = Math.max(minRadius, Math.min(maxRadius, totalNodes / 10));
 
-                scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 5 ? 0.05 : 0.03);
+                scene.fog = new THREE.FogExp2(0xD8D9DA, sphereRadius === 6 ? 0.05 : 0.03);
 
                 if (node.type === 'service') {
                     node.sphere.rotation.set(0, 0, 0);
@@ -614,23 +630,67 @@ class NetWordChart {
                 line.visible = false;
             });
 
-
             isClicked = false;
             controls.enabled = true;
             controls.reset();
+            clearInterval(rotateInterval);
+            next.style.pointerEvents = 'none'
 
         });
 
         // ================================================ 
 
+
+        const zoom = document.createElement('div')
+        zoom.classList.add('button-zoom')
+        zoom.innerHTML = '<img  src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_zoom.png" alt="zoom-in">';
+        zoom.style.padding = '6px'
+        zoom.style.cursor = 'pointer'
+        buttonItem.appendChild(zoom)
+
+        zoom.addEventListener('click', () => {
+            isZoomed = !isZoomed;
+            if (isZoomed) {
+                targetWidth = w * 1.5;
+                targetHeight = h * 1.5;
+                zoom.innerHTML = '<img src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_out.png" alt="zoom-in">';
+                camera.aspect = currentWidth / currentHeight;
+                camera.updateProjectionMatrix();
+                legendContainer.style.width = "-webkit-fill-available";
+
+            } else {
+                targetWidth = w;
+                targetHeight = h;
+                zoom.innerHTML = '<img src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_zoom.png" alt="zoom-out">';
+                renderer.setPixelRatio(window.devicePixelRatio, 2);
+                legendContainer.style.width = w + "px";
+            }
+            legendContainer.style.opacity = '0';
+            setTimeout(() => {
+                legendContainer.style.opacity = '1';
+            }, 600);
+        });
+
+
+        function animateSizeChange() {
+            if (currentWidth !== targetWidth || currentHeight !== targetHeight) {
+                currentWidth += (targetWidth - currentWidth) / 10;
+                currentHeight += (targetHeight - currentHeight) / 10;
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(currentWidth, currentHeight, false);
+            }
+        }
+
+        // ================================================ 
+
         function addEventListeners() {
             const serviceNodes = nodes.filter(node => node.type === 'service');
-
             renderer.domElement.addEventListener('click', onDocumentClick);
             renderer.domElement.addEventListener('mousemove', onDocumentMouseMove);
 
             function onDocumentClick(event) {
                 if (isClicked || isDraggingControls) return;
+
 
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
                 if (!clickedObject) return;
@@ -640,7 +700,6 @@ class NetWordChart {
 
             function onDocumentMouseMove(event) {
                 if (isClicked || isDraggingControls) return;
-
                 const hoveredObject = getObjectFromMouseEvent(event, serviceNodes);
                 document.body.style.cursor = hoveredObject ? 'pointer' : 'default';
             }
@@ -648,12 +707,7 @@ class NetWordChart {
             function getObjectFromMouseEvent(event, nodes) {
                 const mouse = getMousePosition(event);
                 const intersects = getIntersectingObjects(mouse, nodes);
-
-                const serviceIntersects = intersects.filter(intersect =>
-                    nodes.some(node => node.type === 'service' && node.sphere === intersect.object)
-                );
-
-                return serviceIntersects.length > 0 ? serviceIntersects[0].object : null;
+                return intersects.length > 0 ? intersects[0].object : null;
             }
             function getIntersectingObjects(mouse, nodes) {
                 const raycaster = new THREE.Raycaster();
@@ -663,8 +717,9 @@ class NetWordChart {
 
             function getMousePosition(event) {
                 const mouse = new THREE.Vector2();
-                mouse.x = (event.clientX / w) * 2 - 1;
-                mouse.y = -(event.clientY / h) * 2 + 1;
+                mouse.x = (event.offsetX / currentWidth) * 2 - 1;
+                mouse.y = -(event.offsetY / currentHeight) * 2 + 1;
+
                 return mouse;
             }
         }
@@ -673,9 +728,8 @@ class NetWordChart {
 
         const animate = () => {
             requestAnimationFrame(animate);
-            renderer.setClearAlpha(1);
-            renderer.setClearColor(0x072541);
-
+            renderer.setClearAlpha(0);
+            animateSizeChange();
             if (!isClicked) {
                 scene.rotation.y += rotationY;
                 serviceNodes = nodes.filter(node => node.type === 'service');
@@ -683,6 +737,8 @@ class NetWordChart {
 
                     node.sphere.rotation.y -= rotationY;
                     node.cylinder.rotation.y -= rotationY;
+
+
 
                     if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
                         const shadowMesh = node.sphere.userData.shadowMesh;

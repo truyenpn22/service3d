@@ -682,41 +682,6 @@
                     "id": "orders8",
                     "name": "Orders",
                     "count": 150
-                },
-                {
-                    "id": "tables13",
-                    "name": "TAB_TMP176",
-                    "count": 150
-                },
-                {
-                    "id": "tables11",
-                    "name": "TAB_TMP154",
-                    "count": 150
-                },
-                {
-                    "id": "products9",
-                    "name": "Products9",
-                    "count": 150
-                },
-                {
-                    "id": "products10",
-                    "name": "Products10",
-                    "count": 150
-                },
-                {
-                    "id": "users13",
-                    "name": "Users13",
-                    "count": 150
-                },
-                {
-                    "id": "orders11",
-                    "name": "Orders11",
-                    "count": 150
-                },
-                {
-                    "id": "orders9",
-                    "name": "Orders9",
-                    "count": 150
                 }
             ]
         },

@@ -59,6 +59,8 @@ This dataset provides an overview of various web services along with their assoc
 * `rotationY`: Potentially an option for the chart to rotate around the Y-axis with a specified rate.If not set default value is 0.001.
 * `rotateSpeed`: Customize rotation speed when clicking nodeService.If not set default value is 800.
 * `lineSize` : Customize the size of the lines.If not set default value is 0.001,
+* `width` : Customize chart width size,
+* `height` : Customize chart height size,
 
 ## Libraries and Technologies
 
