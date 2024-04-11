@@ -5,7 +5,6 @@ import { OrbitControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/
 import { EffectComposer } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/postprocessing/OutlinePass.js';
-import { UnrealBloomPass } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 let rotateInterval;
 class NetWordChart {
@@ -109,16 +108,18 @@ class NetWordChart {
         outlinePass2.edgeThickness = 10;
 
         const outlinePass = new OutlinePass(new THREE.Vector2(w, h), scene, camera);
-        outlinePass.edgeStrength = 8;
+        outlinePass.edgeStrength = 5;
         outlinePass.edgeGlow = 1.4;
-        outlinePass.edgeThickness = 8
+        outlinePass.edgeThickness = 6
 
         composer.addPass(outlinePass)
         composer.addPass(outlinePass2)
 
-        renderer.toneMapping = THREE.LinearToneMapping;
+        renderer.toneMapping = THREE.LinearToneMapping
         renderer.toneMappingExposure = 1.4
-        // ===============================================================
+
+
+        // ==============================================================
 
         function extractNodesAndLinks(data) {
             let nodes = [];
@@ -628,9 +629,6 @@ class NetWordChart {
                 }
             });
 
-            document.querySelectorAll('.legend-item').forEach(item => {
-                item.classList.remove('active');
-            });
             nodes.forEach(node => {
                 const totalNodes = nodes.length;
                 const maxRadius = 5;
