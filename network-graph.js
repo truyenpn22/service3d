@@ -6,6 +6,7 @@ import { EffectComposer } from 'https://www.unpkg.com/three@0.140.0/examples/jsm
 import { RenderPass } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/postprocessing/OutlinePass.js';
 
+
 let rotateInterval;
 class NetWordChart {
     constructor(config) {
@@ -91,11 +92,6 @@ class NetWordChart {
         // const bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), 1.8, 0.1, 0.1);
 
 
-
-
-
-
-
         const composer = new EffectComposer(renderer);
         const renderPass = new RenderPass(scene, camera);
         composer.addPass(renderPass);
@@ -109,7 +105,7 @@ class NetWordChart {
 
         const outlinePass = new OutlinePass(new THREE.Vector2(w, h), scene, camera);
         outlinePass.edgeStrength = 5;
-        outlinePass.edgeGlow = 1.4;
+        outlinePass.edgeGlow = 2;
         outlinePass.edgeThickness = 6
 
         composer.addPass(outlinePass)
@@ -117,6 +113,8 @@ class NetWordChart {
 
         renderer.toneMapping = THREE.LinearToneMapping
         renderer.toneMappingExposure = 1.4
+
+
 
 
         // ==============================================================
@@ -567,7 +565,7 @@ class NetWordChart {
             legendItems.forEach(node => {
                 const legendItem = document.createElement('div');
                 legendItem.style.cursor = 'pointer'
-                legendItem.style.margin = "5px"
+                legendItem.style.margin = "8px"
                 legendItem.classList.add('legend-item');
 
                 const colorBox = document.createElement('div');
