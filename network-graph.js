@@ -5,6 +5,7 @@ import { OrbitControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/
 
 
 let rotateInterval;
+
 class NetWordChart {
     constructor(config) {
         this.config = config;
@@ -14,20 +15,20 @@ class NetWordChart {
 
         let classId = this.config.Id || "network-graph";
         let data = this.config.data || [];
-        let rotationY = this.config.rotationY || 0.001;
+        let rotationY = this.config.rotationY || 2;
         let rotateSpeed = this.config.rotateSpeed || 800;
         let lineSize = this.config.lineSize || 0.001
         let w = this.config.width || window.innerWidth;
         let h = this.config.height || window.innerHeight;
 
-        let customColor = this.config.colorService || ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",]
-
+        let customColor = this.config.colorService || ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
+        let customizeZoom = this.config.customizeZoom || 2.2
         let serviceNodes, tableNodes;
         let isClicked = false;
         let globalRotation = 0;
         let isRotating = false;
         let connectingLines = [];
-        let lastUpdateTime = Date.now();
+        let controlsInitialized = false;
         let isControlChange = false;
         let isDraggingControls = false;
         let serviceNodeLookup = {};
@@ -36,6 +37,7 @@ class NetWordChart {
         let targetHeight = h;
         let currentWidth = w;
         let currentHeight = h;
+        let containerMain;
         let legendContainer;
         let legendMain;
         let container;
@@ -43,9 +45,11 @@ class NetWordChart {
 
         // ==============================================================
 
+
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
         camera.position.z = 12;
+        camera.lookAt(scene.position);
 
 
 
@@ -60,7 +64,7 @@ class NetWordChart {
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
 
-        const containerMain = document.getElementById(classId)
+        containerMain = document.getElementById(classId)
 
         container = document.createElement('div');
         container.classList.add('menuMain');
@@ -69,11 +73,12 @@ class NetWordChart {
 
 
 
+
         let panelGroup = document.createElement('div');
         panelGroup.classList.add('panelGroup');
 
         containerMain.appendChild(panelGroup)
-        panelGroup.appendChild(renderer.domElement);
+        panelGroup.appendChild(renderer.domElement).style.borderBottomLeftRadius = '10px';
 
         // ==============================================================
 
@@ -83,10 +88,11 @@ class NetWordChart {
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.04;
+        controls.dampingFactor = 0.05;
         controls.enablePan = false;
-        controls.minDistance = 2;
-        controls.maxDistance = 2000;
+        controls.minDistance = 10;
+        controls.maxDistance = 500;
+
 
         // ==============================================================
 
@@ -294,8 +300,9 @@ class NetWordChart {
                                 const framesPerRotation = rotateSpeed;
                                 const rotationIncrement = rotateAngle / framesPerRotation;
                                 controls.enabled = false;
-                                next.style.pointerEvents = 'none'
+                                iconNext.style.pointerEvents = 'none'
                                 camera.position.set(0, 0, 12)
+                                controls.reset()
                                 rotateInterval = setInterval(() => {
                                     if (globalRotation >= rotateAngle) {
                                         clearInterval(rotateInterval);
@@ -305,11 +312,11 @@ class NetWordChart {
                                         this.userData.isSelected = !this.userData.isSelected;
                                         isClicked = true;
                                         scene.fog = new THREE.FogExp2(0x000000, 0);
-                                        next.style.pointerEvents = null
+                                        iconNext.style.pointerEvents = null;
 
                                         allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = false; });
-                                        allNodesGroup.visible = false
-                                        allNodesGroupDetails.visible = true
+                                        allNodesGroup.visible = false;
+                                        allNodesGroupDetails.visible = true;
 
                                         const newGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.08, 50);
                                         newGeometry.rotateX(Math.PI / 2);
@@ -342,6 +349,47 @@ class NetWordChart {
                                         const texture = new THREE.CanvasTexture(labelCanvas);
                                         const newMaterial = new THREE.MeshBasicMaterial({ map: texture, color: colors(node.id) });
 
+
+
+                                        const glowServiceMaterial = new THREE.ShaderMaterial({
+                                            uniforms: {
+                                                glowColor: { value: new THREE.Color(colors(node.id)) },
+                                            },
+                                            vertexShader:
+                                                `
+                                                varying vec3 vNormal;
+                                                varying vec3 vPosition;
+                                                void main() {
+                                                vNormal = normalize( normalMatrix * normal);
+                                              
+                                                gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 0.8 );
+                                                vPosition = gl_Position.xyz;
+                                                }
+                                            `,
+                                            fragmentShader: `
+                                            varying vec3 vNormal;
+                                            varying vec3 vPosition;
+                                            uniform vec3 glowColor; 
+                                        
+                                            void main() {    
+                                                float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.4)), 3.4);
+                                                vec3 finalColor = glowColor * intensity;  
+
+                                                gl_FragColor = vec4(finalColor, 0.5) * intensity;
+                                            }
+                                        `,
+                                            blending: THREE.AdditiveBlending,
+                                            side: THREE.BackSide,
+                                            transparent: true,
+                                            depthWrite: false,
+                                        });
+
+
+                                        const atmoService = new THREE.SphereGeometry(1.6, 64, 32);
+                                        const atmoServiceSphere = new THREE.Mesh(atmoService, glowServiceMaterial);
+                                        atmoServiceSphere.position.set(0, 0, -0.5);
+                                        allNodesGroupDetails.add(atmoServiceSphere);
+
                                         const sphere = new THREE.Mesh(newGeometry, newMaterial);
                                         sphere.position.set(0, 0, 0);
                                         allNodesGroupDetails.add(sphere);
@@ -361,12 +409,14 @@ class NetWordChart {
                                             const y = sphereRadius * Math.sin(theta + offset);
                                             const z = 0;
 
-                                            const geometry = new THREE.SphereGeometry(0.5, 64, 32);
+                                            const geometry = new THREE.CylinderGeometry(0.4, 0.4, 0.08, 50);
+                                            geometry.rotateX(Math.PI / 2);
+
                                             const material = new THREE.MeshStandardMaterial({ color: 0xFF6D28, emissive: 0xFF6D28, roughness: 0.5, metalness: 2 });
 
                                             const sphere = new THREE.Mesh(geometry, material);
 
-                                            sphere.position.set(x, y, z);
+                                            sphere.position.set(x, y, z + 0.1);
                                             allNodesGroupDetails.add(sphere);
                                             const sourceNode = nodes.find(n => n.id === node.id);
                                             const sourcePosition = new THREE.Vector3(0, 0, -1);
@@ -386,12 +436,10 @@ class NetWordChart {
                                             allNodesGroupDetails.add(line);
                                             scene.add(allNodesGroupDetails);
 
-                                            const glowMaterial = new THREE.ShaderMaterial({
+
+                                            const glowTableMaterial = new THREE.ShaderMaterial({
                                                 uniforms: {
-                                                    "c": { type: "f", value: 0.4 },
-                                                    "p": { type: "f", value: 0.4 },
-                                                    glowColor: { type: "c", value: new THREE.Color(0xFF6D28) },
-                                                    viewVector: { type: "v3", value: camera.position }
+                                                    glowColor: { value: new THREE.Color(0xFF6D28) },
                                                 },
                                                 vertexShader:
                                                     `
@@ -400,7 +448,7 @@ class NetWordChart {
                                                     void main() {
                                                     vNormal = normalize( normalMatrix * normal);
                                                   
-                                                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                                                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 0.8 );
                                                     vPosition = gl_Position.xyz;
                                                     }
                                                 `,
@@ -410,10 +458,10 @@ class NetWordChart {
                                                 uniform vec3 glowColor; 
                                             
                                                 void main() {    
-                                                    float intensity = pow(0.65 - dot(vNormal, vec3(0, 0, 0.5)), 4.0);
+                                                    float intensity = pow(0.65 - dot(vNormal, vec3(0, 0, 0.4)), 2.0);
                                                     vec3 finalColor = glowColor * intensity;  
-
-                                                    gl_FragColor = vec4(finalColor, 1.2) * intensity;
+    
+                                                    gl_FragColor = vec4(finalColor, 0.65) * intensity;
                                                 }
                                             `,
                                                 blending: THREE.AdditiveBlending,
@@ -422,14 +470,11 @@ class NetWordChart {
                                                 depthWrite: false,
                                             });
 
+                                            const atmoTable = new THREE.SphereGeometry(0.45, 64, 32);
+                                            const atmoTablesphere = new THREE.Mesh(atmoTable, glowTableMaterial);
+                                            atmoTablesphere.position.set(x, y, 0.2);
+                                            allNodesGroupDetails.add(atmoTablesphere);
 
-
-                                            const atmosphereGeometry = new THREE.SphereGeometry(0.7, 64, 32);
-
-                                            const atmosphere = new THREE.Mesh(atmosphereGeometry, glowMaterial);
-                                            atmosphere.position.set(x, y, z + 0.3);
-
-                                            allNodesGroupDetails.add(atmosphere);
 
                                             loader.load(fontUrl, function (font) {
                                                 const textMaterial = new THREE.MeshToonMaterial({ color: 0xF4F4F4, emissive: 0xF4F4F4 });
@@ -460,19 +505,14 @@ class NetWordChart {
                                             });
 
                                         });
-
-
                                     } else {
                                         allNodesGroup.rotation.y += rotationIncrement;
-                                        serviceNodes.forEach((node) => {
-                                            node.sphere.rotation.y -= rotationIncrement;
-                                        });
                                         globalRotation += rotationIncrement;
                                     }
                                 }, rotateDuration / framesPerRotation);
                             }
-                            renderer.render(scene, camera);
-
+                            // renderer.render(scene, camera);
+                            // controls.reset();
                         }
                     }
 
@@ -481,7 +521,7 @@ class NetWordChart {
                     const y = sphereRadius * Math.cos(phi);
                     const z = sphereRadius * Math.sin(theta) * Math.sin(phi);
 
-                    const geometry = new THREE.SphereGeometry(0.15, 18, 12);
+                    const geometry = new THREE.SphereGeometry(0.1, 18, 12);
                     const material = new THREE.MeshStandardMaterial({ color: 0xFF6D28, emissive: 0xFF6D28, emissiveIntensity: 1 });
 
                     const sphere = new THREE.Mesh(geometry, material);
@@ -490,14 +530,11 @@ class NetWordChart {
                     countLabel.position.set(x, y + 1, z);
                     allNodesGroup.add(countLabel)
 
-
-
                     const nameLabel = createLabel(node.name.toUpperCase(), "#F4F4F4", 35);
                     nameLabel.position.set(x, y + 0.1, z);
                     allNodesGroup.add(nameLabel)
                     node.countLabel = countLabel;
                     node.nameLabel = nameLabel;
-
 
                     sphere.position.set(x, y, z);
                     node.sphere = sphere;
@@ -582,10 +619,10 @@ class NetWordChart {
         // ================================================ 
 
         function createLegend(nodes) {
-
             legendMain = document.createElement('div');
-            legendMain.style.background = "rgba(201, 201, 201, 0.04)"
-
+            legendMain.style.backdropFilter = "blur(20px)"
+            legendMain.style.borderBottomLeftRadius = "10px"
+            legendMain.style.borderBottomRightRadius = "10px"
 
             legendContainer = document.createElement('div');
             legendContainer.style.display = "grid"
@@ -620,8 +657,8 @@ class NetWordChart {
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
                 legendContainer.appendChild(legendItem);
-                legendItem.addEventListener('click', () => {
 
+                legendItem.addEventListener('click', () => {
                     const serviceNode = serviceNodeLookup[node.id];
                     serviceNode.onClick();
                     allNodesGroupDetails.visible = true;
@@ -640,23 +677,33 @@ class NetWordChart {
         buttonItem.classList.add('button-item')
         container.appendChild(buttonItem)
 
-        const geomatry = document.createElement('div')
-        geomatry.classList.add('geomatryItem')
-        geomatry.innerHTML = '<img  src="http://demo.idrsoft.com/apm/assets/images/ic_DBservicer.png" alt="geomatry">'
-        geomatry.style.paddingLeft = '10px'
-        container.appendChild(geomatry)
+        const iconGeomatry = document.createElement('div')
+        iconGeomatry.classList.add('geomatryItem')
+        iconGeomatry.innerHTML = '<img  src="./img/ic_DBservicer.png" alt="iconGeomatry">';
+        iconGeomatry.style.paddingLeft = '10px'
+        iconGeomatry.style.display = 'flex'
+        iconGeomatry.style.alignItems = 'center'
+        iconGeomatry.style.gap = '10px'
+
+        const h3Element = document.createElement('h3');
+        h3Element.textContent = 'DB 서비스';
+        h3Element.style.fontSize = '15px'
+        h3Element.style.fontWeight = '400'
+        h3Element.style.color = '#C4E4FF'
+        iconGeomatry.appendChild(h3Element);
+        container.appendChild(iconGeomatry)
 
         // ================================================ 
 
-        const next = document.createElement('div')
-        next.classList.add('button-next');
-        next.innerHTML = '<img  src="http://demo.idrsoft.com/apm/assets/images/next.svg" alt="next">'
-        next.style.width = '20px'
-        next.style.height = '20px'
-        next.style.padding = '8px'
-        next.style.cursor = 'pointer'
-        buttonItem.appendChild(next)
-        next.addEventListener('click', () => {
+        const iconNext = document.createElement('div')
+        iconNext.classList.add('button-next');
+        iconNext.innerHTML = '<img  src="./img/next.svg" alt="iconNext">'
+        iconNext.style.width = '20px'
+        iconNext.style.height = '20px'
+        iconNext.style.padding = '8px'
+        iconNext.style.cursor = 'pointer'
+        buttonItem.appendChild(iconNext)
+        iconNext.addEventListener('click', () => {
             allNodesGroup.rotation.y = 0;
             allNodesGroup.visible = true;
             allNodesGroupDetails.visible = false;
@@ -669,13 +716,13 @@ class NetWordChart {
             });
 
             nodes.forEach(node => {
-
                 scene.fog = new THREE.FogExp2(0x5e5f63, 0.05);
                 scene.rotation.set(0, 0, 0)
                 if (node.type === 'service') {
                     node.sphere.rotation.set(0, 0, 0);
                 }
             });
+
             allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = true; });
 
             connectingLines.forEach((line) => { line.visible = false; });
@@ -683,51 +730,52 @@ class NetWordChart {
             isClicked = false;
             controls.enabled = true;
             controls.reset();
-            clearInterval(rotateInterval);
+
             camera.position.set(0, 0, 12)
+            clearInterval(rotateInterval);
         });
 
 
         // ================================================ 
 
 
-        const zoom = document.createElement('div')
-        zoom.classList.add('button-zoom')
-        zoom.innerHTML = '<img  src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_zoom.png" alt="zoom-in">';
-        zoom.style.padding = '6px'
-        zoom.style.cursor = 'pointer'
-        buttonItem.appendChild(zoom)
 
-        zoom.addEventListener('click', () => {
+        const iconZoom = document.createElement('div')
+        iconZoom.classList.add('button-zoom')
+        iconZoom.innerHTML = '<img  src="./img/ic_DBservice_zoom.png" alt="zoom-in">';
+        iconZoom.style.padding = '6px'
+        iconZoom.style.cursor = 'pointer'
+        buttonItem.appendChild(iconZoom)
+
+        iconZoom.addEventListener('click', () => {
             isZoomed = !isZoomed;
             if (isZoomed) {
-                targetWidth = w * 2.8;
-                targetHeight = h * 2.8;
-                zoom.innerHTML = '<img src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_out.png" alt="zoom-in">';
+                targetWidth = w * customizeZoom;
+                targetHeight = h * customizeZoom;
+
+                iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
                 container.style.backgroundColor = "#4C65BF"
-                legendContainer.style.width = "-webkit-fill-available";
-                legendContainer.style.height = "-webkit-fill-available";
-                legendContainer.style.maxHeight = "-webkit-fill-available";
+                legendContainer.style.width = "-webkit-fill-available"
+                legendContainer.style.height = "-webkit-fill-available"
+                legendContainer.style.maxHeight = "-webkit-fill-available"
+                containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
+                legendMain.style.background = "rgba(201, 201, 201, 0.04)"
                 panelGroup.style.display = "flex"
                 camera.aspect = currentWidth / currentHeight;
                 camera.updateProjectionMatrix();
                 renderer.setPixelRatio(window.devicePixelRatio, 2);
-                legendMain.style.opacity = 0
-
-                setTimeout(() => {
-                    legendMain.style.opacity = 1
-                }, 800)
             } else {
                 targetWidth = w;
                 targetHeight = h;
-                zoom.innerHTML = '<img src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_zoom.png" alt="zoom-out">';
+                iconZoom.innerHTML = '<img src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_zoom.png" alt="zoom-out">'
                 container.style.backgroundColor = "#32427B"
-                legendContainer.style.width = w + "px";
-                legendContainer.style.height = h + "px";
-                panelGroup.style.display = "grid";
+                legendMain.style.background = "none"
+                legendContainer.style.width = w + "px"
+                legendContainer.style.height = h + "px"
+                containerMain.style.boxShadow = "none"
+                panelGroup.style.display = "grid"
                 renderer.setPixelRatio(window.devicePixelRatio, 2);
                 legendMain.style.opacity = 0
-
                 setTimeout(() => {
                     legendMain.style.opacity = 1
                 }, 800)
@@ -754,6 +802,7 @@ class NetWordChart {
 
             function onDocumentClick(event) {
                 if (isClicked || isDraggingControls) return;
+
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
                 if (!clickedObject) return;
                 clickedObject.onClick();
@@ -761,6 +810,7 @@ class NetWordChart {
 
             function onDocumentMouseMove(event) {
                 if (isClicked || isDraggingControls) return;
+
                 const hoveredObject = getObjectFromMouseEvent(event, serviceNodes);
                 document.body.style.cursor = hoveredObject ? 'pointer' : 'default';
             }
@@ -790,74 +840,74 @@ class NetWordChart {
 
 
         function controlChange() {
-            controls.addEventListener('change', () => {
-                const currentTime = Date.now();
-                const timeElapsed = currentTime - lastUpdateTime;
-                const cameraPosition = camera.position.clone();
-
-                const rotationMatrix = new THREE.Matrix4();
-                rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
-                if (timeElapsed > 100) {
+            if (!controlsInitialized) {
+                const changeListener = () => {
+                    const cameraPosition = camera.position.clone();
+                    const rotationMatrix = new THREE.Matrix4();
+                    rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
                     for (let i = 0; i < serviceNodes.length; i++) {
                         const node = serviceNodes[i];
                         node.sphere.quaternion.setFromRotationMatrix(rotationMatrix);
+
                     }
-                    scene.rotation.y += 0;
-                    lastUpdateTime = currentTime;
-                }
-            });
+                };
 
-            controls.addEventListener('start', () => {
-                isDraggingControls = true;
-                document.body.style.cursor = 'grab'
-                scene.rotation.y = 0;
-            });
-            controls.addEventListener('end', () => {
-                isDraggingControls = false;
-                document.body.style.cursor = 'default'
-            });
+                const startListener = () => {
+                    isDraggingControls = true;
+                    document.body.style.cursor = 'grab';
+                };
+
+                const endListener = () => {
+                    document.body.style.cursor = 'default';
+                    isDraggingControls = false;
+                };
+
+                controls.addEventListener('change', changeListener);
+                controls.addEventListener('start', startListener);
+                controls.addEventListener('end', endListener);
+                controlsInitialized = true;
+            }
             controls.update();
-
-        }
-
-        // ================================================ 
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = rotationY;
+        };
 
         const animate = () => {
             requestAnimationFrame(animate);
             animateSizeChange();
-            controlChange();
+
             if (!isClicked) {
-                scene.rotation.y += rotationY;
-                serviceNodes = nodes.filter(node => node.type === 'service');
-                serviceNodes.forEach((node) => {
-                    node.sphere.rotation.y -= rotationY;
-                    if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
-                        const shadowMesh = node.sphere.userData.shadowMesh;
-                        shadowMesh.position.copy(node.sphere.position);
-                        shadowMesh.rotation.copy(node.sphere.rotation);
-                    }
-                });
-                tableNodes = nodes.filter(node => node.type === 'table');
-                tableNodes.forEach(node => {
-                    if (node.countLabel && node.nameLabel) {
-                        node.countLabel.rotation.y -= rotationY;
-                        node.nameLabel.rotation.y -= rotationY;
+                controlChange();
+                if (!isDraggingControls) {
+                    serviceNodes = nodes.filter(node => node.type === 'service');
+                    serviceNodes.forEach((node) => {
+                        if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
+                            const shadowMesh = node.sphere.userData.shadowMesh;
+                            shadowMesh.position.copy(node.sphere.position);
+                            shadowMesh.rotation.copy(node.sphere.rotation);
+                        }
+                    });
+                    tableNodes = nodes.filter(node => node.type === 'table');
+                    tableNodes.forEach(node => {
+                        if (node.countLabel && node.nameLabel) {
+                            node.countLabel.rotation.y -= rotationY;
+                            node.nameLabel.rotation.y -= rotationY;
 
-                        const sphere = node.sphere;
-                        const countText = node.countLabel;
-                        const nameText = node.nameLabel;
+                            const sphere = node.sphere;
+                            const countText = node.countLabel;
+                            const nameText = node.nameLabel;
 
-                        const textDistance = 0.6;
-                        const textHeight = 0.26;
-                        const textX = sphere.position.x;
-                        const textY = sphere.position.y + textDistance;
-                        const textZ = sphere.position.z;
+                            const textDistance = 0.6;
+                            const textHeight = 0.26;
+                            const textX = sphere.position.x;
+                            const textY = sphere.position.y + textDistance;
+                            const textZ = sphere.position.z;
 
-                        countText.position.set(textX, textY, textZ);
-                        nameText.position.set(textX, textY - textHeight, textZ);
-                    }
-                });
-                controls.update();
+                            countText.position.set(textX, textY, textZ);
+                            nameText.position.set(textX, textY - textHeight, textZ);
+                        }
+                    });
+                }
             } else {
                 scene.rotation.y = 0;
                 controls.reset();
@@ -866,6 +916,7 @@ class NetWordChart {
         };
 
         animate();
+
     }
 }
 export { NetWordChart }

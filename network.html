@@ -41,10 +41,10 @@
             place-items: center;
             background-color: rgba(184, 184, 185, .10);
             margin: 13px;
-            box-shadow: inset 0 0 5px #ffffff;
+            margin-top: 80px;
+            box-shadow: inset 0 0 1px #afaeae;
             border-radius: 10px;
             color: #74777c;
-
         }
 
         .menuMain {
@@ -56,7 +56,6 @@
             background-color: #32427B;
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
-            box-shadow: inset 0 0 5px #ffffff;
 
         }
 
@@ -82,12 +81,13 @@
         .geomatryItem img {
             background-color: #1f2a53;
             padding: 8px;
-            margin-top: 5px;
             border-radius: 5px;
         }
 
         canvas {
             width: 100%;
+            backdrop-filter: blur(20px);
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
@@ -105,17 +105,20 @@
         }
     </script>
     <script type="module" src="./network-graph.js"></script>
+
     <script type="module">
         import { NetWordChart } from './network-graph.js'
         d3.json("data.json").then(function (data) {
             const networkchart = new NetWordChart({
                 Id: "network-graph",
                 data: data,
-                rotationY: 0.001,
+                rotationY: 1,
                 rotateSpeed: 400,
                 lineSize: 0.001,
                 width: 350,
                 height: 300,
+                customizeZoom: 2.2,
+                colorService: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
             })
         })
     </script>
