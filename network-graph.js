@@ -207,7 +207,7 @@ class NetWordChart {
                     labelContext.save();
                     labelContext.translate(labelCanvas.width / 2, labelCanvas.height / 2);
                     labelContext.rotate(-Math.PI / 2);
-                    labelContext.fillText(text, -textWidth * 1.2, 6);
+                    labelContext.fillText(text, -textWidth * 1.3, 6);
                     labelContext.restore();
 
                     const texture = new THREE.CanvasTexture(labelCanvas);
@@ -342,7 +342,7 @@ class NetWordChart {
                                         labelContext.filter = "contrast(2)";
                                         labelContext.translate(labelCanvas.width / 2, labelCanvas.height / 2);
                                         labelContext.rotate(-Math.PI / 2);
-                                        labelContext.fillText(text, -textWidth * 1.2, 6);
+                                        labelContext.fillText(text, -textWidth * 1.3, 6);
                                         labelContext.restore();
 
 
