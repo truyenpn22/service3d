@@ -231,8 +231,7 @@ class NetWordChart {
                             return;
                         }
                         if (this.userData.isSelected) {
-
-                            const shadowGeometry = new THREE.SphereGeometry(sphereRadius === 6 ? 0.65 : 0.75, 18, 20);
+                            const shadowGeometry = new THREE.SphereGeometry(sphereRadius === 4 ? 0.65 : 0.75, 18, 20);
                             shadowGeometry.rotateX(Math.PI / 2);
                             const shadowMaterial = new THREE.MeshToonMaterial({
                                 color: colors(node.id),
@@ -286,11 +285,9 @@ class NetWordChart {
                                         allNodesGroup.add(shadowMesh);
                                         scene.add(allNodesGroup)
                                         connectingLines.push(shadowMesh, line);
-
                                     }
                                 }
                             });
-
 
 
                             if (!isRotating) {
@@ -301,8 +298,7 @@ class NetWordChart {
                                 const rotationIncrement = rotateAngle / framesPerRotation;
                                 controls.enabled = false;
                                 iconNext.style.pointerEvents = 'none'
-                                camera.position.set(0, 0, 12)
-                                controls.reset()
+
                                 rotateInterval = setInterval(() => {
                                     if (globalRotation >= rotateAngle) {
                                         clearInterval(rotateInterval);
@@ -511,8 +507,8 @@ class NetWordChart {
                                     }
                                 }, rotateDuration / framesPerRotation);
                             }
-                            // renderer.render(scene, camera);
-                            // controls.reset();
+                            renderer.render(scene, camera);
+                            controls.reset();
                         }
                     }
 
@@ -540,7 +536,6 @@ class NetWordChart {
                     node.sphere = sphere;
                     allNodesGroup.add(sphere)
                     scene.add(allNodesGroup)
-
                 }
             });
 
@@ -756,12 +751,11 @@ class NetWordChart {
                 iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
                 container.style.backgroundColor = "#4C65BF"
                 legendContainer.style.width = "-webkit-fill-available"
-                legendContainer.style.height = "-webkit-fill-available"
                 legendContainer.style.maxHeight = "-webkit-fill-available"
                 containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
                 legendMain.style.background = "rgba(201, 201, 201, 0.04)"
                 panelGroup.style.display = "flex"
-                camera.aspect = currentWidth / currentHeight;
+                camera.aspect = targetWidth / targetHeight;
                 camera.updateProjectionMatrix();
                 renderer.setPixelRatio(window.devicePixelRatio, 2);
             } else {
@@ -774,6 +768,7 @@ class NetWordChart {
                 legendContainer.style.height = h + "px"
                 containerMain.style.boxShadow = "none"
                 panelGroup.style.display = "grid"
+                legendContainer.style.height = "fit-content"
                 renderer.setPixelRatio(window.devicePixelRatio, 2);
                 legendMain.style.opacity = 0
                 setTimeout(() => {
@@ -802,7 +797,6 @@ class NetWordChart {
 
             function onDocumentClick(event) {
                 if (isClicked || isDraggingControls) return;
-
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
                 if (!clickedObject) return;
                 clickedObject.onClick();
@@ -810,7 +804,6 @@ class NetWordChart {
 
             function onDocumentMouseMove(event) {
                 if (isClicked || isDraggingControls) return;
-
                 const hoveredObject = getObjectFromMouseEvent(event, serviceNodes);
                 document.body.style.cursor = hoveredObject ? 'pointer' : 'default';
             }
@@ -827,12 +820,13 @@ class NetWordChart {
             }
 
             function getMousePosition(event) {
+                const rect = renderer.domElement.getBoundingClientRect();
                 const mouse = new THREE.Vector2();
-                mouse.x = (event.offsetX / currentWidth) * 2 - 1;
-                mouse.y = -(event.offsetY / currentHeight) * 2 + 1;
-
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
                 return mouse;
             }
+
         }
 
 
