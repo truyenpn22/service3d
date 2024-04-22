@@ -14,14 +14,13 @@
             overflow: hidden;
             font-family: "Noto Sans KR", sans-serif;
             object-fit: cover;
-            background-image: url("http://demo.idrsoft.com/apm/assets/images/apm_bg.png");
+            background-image: url("./img/apm_bg.png");
             background-size: cover;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
         }
 
         .legend-item span {
@@ -30,9 +29,9 @@
 
         .legend-color {
             border-radius: 50%;
-            width: 12px;
-            height: 12px;
-            margin-right: 5px;
+            width: 10px;
+            height: 10px;
+            margin-right: 4px;
         }
 
         #network-graph {
@@ -84,9 +83,9 @@
         }
 
         canvas {
-            width: 100%;
+            width: auto;
             backdrop-filter: blur(20px);
-            -webkit-tap-highlight-color: transparent;
+            margin: 0 auto;
         }
     </style>
 </head>
@@ -104,7 +103,6 @@
         }
     </script>
     <script type="module" src="./network-graph.js"></script>
-
     <script type="module">
         import { NetWordChart } from './network-graph.js'
         d3.json("data.json").then(function (data) {
@@ -112,11 +110,11 @@
                 Id: "network-graph",
                 data: data,
                 rotationY: 1,
-                rotateSpeed: 400,
+                rotateSpeed: 200,
                 lineSize: 0.001,
                 width: 350,
                 height: 300,
-                customizeZoom: 2.2,
+                customizeZoom: 2.5,
                 colorService: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
             })
         })

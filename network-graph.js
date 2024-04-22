@@ -47,7 +47,7 @@ class NetWordChart {
 
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(72, w / h, 0.1, 1000);
         camera.position.z = 12;
         camera.lookAt(scene.position);
 
@@ -58,8 +58,11 @@ class NetWordChart {
             alpha: true,
         });
 
-        renderer.setPixelRatio(window.devicePixelRatio, 2);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setPixelRatio(window.devicePixelRatio, 5);
         renderer.setSize(w, h, false);
+
 
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
@@ -76,6 +79,7 @@ class NetWordChart {
 
         let panelGroup = document.createElement('div');
         panelGroup.classList.add('panelGroup');
+        panelGroup.style.display = "grid"
 
         containerMain.appendChild(panelGroup)
         panelGroup.appendChild(renderer.domElement).style.borderBottomLeftRadius = '10px';
@@ -162,6 +166,8 @@ class NetWordChart {
 
         // ==============================================================
 
+
+
         function createVisualNodesAndLinks(nodes, links) {
             const totalNodes = nodes.length;
             const maxRadius = 6;
@@ -190,24 +196,50 @@ class NetWordChart {
                     const labelContext = labelCanvas.getContext('2d');
 
                     let text = node.name.toUpperCase();
-                    if (text.length > 6) {
-                        text = text.slice(0, 6) + '...';
+
+                    let maxCharactersPerLine = text.length >= 8 ? 5 : 4;
+
+
+
+                    const lines = [];
+                    for (let i = 0; i < text.length; i += maxCharactersPerLine) {
+                        lines.push(text.slice(i, i + maxCharactersPerLine));
                     }
 
-                    const textWidth = labelContext.measureText(text).width;
+                    const textWidth = lines.reduce((maxWidth, line) => {
+                        const lineWidth = labelContext.measureText(line).width;
+                        return Math.max(maxWidth, lineWidth);
+                    }, 0);
+
+                    let lineHeight = text.length <= 4 ? 35 : 30;
+
+
+
+                    const fontSize = text.length <= 4 ? 18 : 25;
+
+                    labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
 
                     labelCanvas.width = textWidth * 2.8;
-                    labelCanvas.height = textWidth * 2.8;
+                    labelCanvas.height = lineHeight * lines.length * 2.8;
 
                     labelContext.fillStyle = "#ffffff";
                     labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
 
                     labelContext.fillStyle = "#000000";
-                    labelContext.font = '400 28px "Noto Sans KR", sans-serif';
+                    labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
                     labelContext.save();
                     labelContext.translate(labelCanvas.width / 2, labelCanvas.height / 2);
                     labelContext.rotate(-Math.PI / 2);
-                    labelContext.fillText(text, -textWidth * 1.3, 6);
+
+                    const safeDistance = (geometry.parameters.radiusTop * 2) * 6;
+
+                    lines.forEach((line, index) => {
+                        const textWidth = labelContext.measureText(line).width;
+                        const xPosition = -textWidth / 2;
+                        const yPosition = ((index - lines.length / 8) * lineHeight) + safeDistance;
+                        labelContext.fillText(line, xPosition, yPosition);
+                    });
+
                     labelContext.restore();
 
                     const texture = new THREE.CanvasTexture(labelCanvas);
@@ -220,6 +252,7 @@ class NetWordChart {
                     sphere.position.set(x, y, z);
                     node.sphere = sphere;
                     allNodesGroup.add(sphere);
+
 
                     scene.add(allNodesGroup);
                     serviceNodeLookup[node.id] = sphere;
@@ -293,7 +326,7 @@ class NetWordChart {
                             if (!isRotating) {
                                 isRotating = true;
                                 const rotateDuration = rotateSpeed;
-                                const rotateAngle = (Math.PI * 2) - 0.4;
+                                const rotateAngle = (Math.PI * 2) - 3;
                                 const framesPerRotation = rotateSpeed;
                                 const rotationIncrement = rotateAngle / framesPerRotation;
                                 controls.enabled = false;
@@ -321,26 +354,48 @@ class NetWordChart {
                                         const labelContext = labelCanvas.getContext('2d');
 
                                         let text = node.name.toUpperCase();
-                                        if (text.length > 6) {
-                                            text = text.slice(0, 6) + '...';
+
+                                        let maxCharactersPerLine = text.length >= 8 ? 5 : 4;
+
+
+
+                                        const lines = [];
+                                        for (let i = 0; i < text.length; i += maxCharactersPerLine) {
+                                            lines.push(text.slice(i, i + maxCharactersPerLine));
                                         }
 
-                                        const textWidth = labelContext.measureText(text).width;
+                                        const textWidth = lines.reduce((maxWidth, line) => {
+                                            const lineWidth = labelContext.measureText(line).width;
+                                            return Math.max(maxWidth, lineWidth);
+                                        }, 0);
+
+                                        const lineHeight = text.length <= 4 ? 35 : 30;
+
+                                        const fontSize = text.length <= 4 ? 18 : 25;
+                                        labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
 
                                         labelCanvas.width = textWidth * 2.8;
-                                        labelCanvas.height = textWidth * 2.8;
+                                        labelCanvas.height = lineHeight * lines.length * 2.8;
 
                                         labelContext.fillStyle = "#ffffff";
                                         labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
 
                                         labelContext.fillStyle = "#000000";
-                                        labelContext.font = '400 28px "Noto Sans KR", sans-serif';
-                                        labelContext.filter = "contrast(2)";
+                                        labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
+                                        labelContext.save();
                                         labelContext.translate(labelCanvas.width / 2, labelCanvas.height / 2);
                                         labelContext.rotate(-Math.PI / 2);
-                                        labelContext.fillText(text, -textWidth * 1.3, 6);
-                                        labelContext.restore();
 
+                                        const safeDistance = (geometry.parameters.radiusTop * 2) * 6;
+
+                                        lines.forEach((line, index) => {
+                                            const textWidth = labelContext.measureText(line).width;
+                                            const xPosition = -textWidth / 2;
+                                            const yPosition = ((index - lines.length / 8) * lineHeight) + safeDistance;
+                                            labelContext.fillText(line, xPosition, yPosition);
+                                        });
+
+                                        labelContext.restore();
 
                                         const texture = new THREE.CanvasTexture(labelCanvas);
                                         const newMaterial = new THREE.MeshBasicMaterial({ map: texture, color: colors(node.id) });
@@ -368,10 +423,10 @@ class NetWordChart {
                                             uniform vec3 glowColor; 
                                         
                                             void main() {    
-                                                float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.4)), 3.4);
+                                                float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.38)), 4.4);
                                                 vec3 finalColor = glowColor * intensity;  
 
-                                                gl_FragColor = vec4(finalColor, 0.5) * intensity;
+                                                gl_FragColor = vec4(finalColor, 0.25) * intensity;
                                             }
                                         `,
                                             blending: THREE.AdditiveBlending,
@@ -381,7 +436,7 @@ class NetWordChart {
                                         });
 
 
-                                        const atmoService = new THREE.SphereGeometry(1.6, 64, 32);
+                                        const atmoService = new THREE.SphereGeometry(1.9, 64, 32);
                                         const atmoServiceSphere = new THREE.Mesh(atmoService, glowServiceMaterial);
                                         atmoServiceSphere.position.set(0, 0, -0.5);
                                         allNodesGroupDetails.add(atmoServiceSphere);
@@ -412,13 +467,13 @@ class NetWordChart {
 
                                             const sphere = new THREE.Mesh(geometry, material);
 
-                                            sphere.position.set(x, y, z + 0.1);
+                                            sphere.position.set(x, y, z);
                                             allNodesGroupDetails.add(sphere);
                                             const sourceNode = nodes.find(n => n.id === node.id);
-                                            const sourcePosition = new THREE.Vector3(0, 0, -1);
+                                            const sourcePosition = new THREE.Vector3(0, 0, 0);
                                             const targetPosition = new THREE.Vector3(x, y, z);
                                             const distance = sourcePosition.distanceTo(targetPosition);
-                                            const lineGeometry = new THREE.CylinderGeometry(0.08, 0.08, distance, 18);
+                                            const lineGeometry = new THREE.CylinderGeometry(0.04, 0.04, distance, 18);
                                             const lineMaterial = new THREE.MeshToonMaterial({ color: new THREE.Color(colors(sourceNode.id)), emissive: new THREE.Color(colors(sourceNode.id)) });
                                             const line = new THREE.Mesh(lineGeometry, lineMaterial);
 
@@ -454,10 +509,10 @@ class NetWordChart {
                                                 uniform vec3 glowColor; 
                                             
                                                 void main() {    
-                                                    float intensity = pow(0.65 - dot(vNormal, vec3(0, 0, 0.4)), 2.0);
+                                                    float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.4)), 5.5);
                                                     vec3 finalColor = glowColor * intensity;  
     
-                                                    gl_FragColor = vec4(finalColor, 0.65) * intensity;
+                                                    gl_FragColor = vec4(finalColor, 0.4) * intensity;
                                                 }
                                             `,
                                                 blending: THREE.AdditiveBlending,
@@ -466,10 +521,11 @@ class NetWordChart {
                                                 depthWrite: false,
                                             });
 
-                                            const atmoTable = new THREE.SphereGeometry(0.45, 64, 32);
-                                            const atmoTablesphere = new THREE.Mesh(atmoTable, glowTableMaterial);
-                                            atmoTablesphere.position.set(x, y, 0.2);
-                                            allNodesGroupDetails.add(atmoTablesphere);
+                                            const atmoTable = new THREE.SphereGeometry(0.4, 64, 50);
+
+                                            const atmoTablespheree = new THREE.Mesh(atmoTable, glowTableMaterial);
+                                            atmoTablespheree.position.set(x, y, z + 0.36);
+                                            allNodesGroupDetails.add(atmoTablespheree);
 
 
                                             loader.load(fontUrl, function (font) {
@@ -485,7 +541,7 @@ class NetWordChart {
                                                 countTextGeometry.computeBoundingBox();
                                                 const textWidthCount = countTextGeometry.boundingBox.max.x - countTextGeometry.boundingBox.min.x;
 
-                                                countText.position.set(x - textWidthCount / 2, y + 1.5, 0.1);
+                                                countText.position.set(x - textWidthCount / 2, y + 1.5, -0.3);
                                                 allNodesGroupDetails.add(countText);
 
                                                 const nameTextGeometry = new TextGeometry(targetNode.name.toUpperCase(), {
@@ -496,11 +552,12 @@ class NetWordChart {
                                                 const nameText = new THREE.Mesh(nameTextGeometry, textMaterial);
                                                 nameTextGeometry.computeBoundingBox();
                                                 const textWidth = nameTextGeometry.boundingBox.max.x - nameTextGeometry.boundingBox.min.x;
-                                                nameText.position.set(x - textWidth / 2, y + 0.8, 0.1);
+                                                nameText.position.set(x - textWidth / 2, y + 0.8, -0.2);
                                                 allNodesGroupDetails.add(nameText);
                                             });
 
                                         });
+
                                     } else {
                                         allNodesGroup.rotation.y += rotationIncrement;
                                         globalRotation += rotationIncrement;
@@ -622,12 +679,12 @@ class NetWordChart {
             legendContainer = document.createElement('div');
             legendContainer.style.display = "grid"
             legendContainer.style.gridTemplateColumns = "repeat(4, 1fr)"
-            legendContainer.style.width = w + "px"
-            legendContainer.style.height = "fit-content"
-            legendContainer.style.maxHeight = h + "px"
-            legendContainer.style.gap = "3px"
-            legendContainer.style.whiteSpace = "nowrap"
-            legendContainer.style.overflow = "hidden"
+            legendContainer.style.margin = "4px"
+
+            // legendContainer.style.height = "fit-content"
+            // legendContainer.style.maxHeight = h + "px"
+            // legendContainer.style.gap = "3px"
+
 
             panelGroup.appendChild(legendMain)
             legendMain.appendChild(legendContainer);
@@ -638,7 +695,7 @@ class NetWordChart {
                 const legendItem = document.createElement('div');
                 legendItem.classList.add('legend-item');
                 legendItem.style.cursor = 'pointer'
-                legendItem.style.margin = "8px"
+                legendItem.style.margin = "5px 8px"
 
                 const colorBox = document.createElement('div');
                 colorBox.classList.add('legend-color');
@@ -647,7 +704,8 @@ class NetWordChart {
                 const label = document.createElement('span');
                 label.textContent = node.name;
                 label.style.color = '#ffffff';
-                label.style.fontSize = '12px';
+                label.style.fontSize = '10px';
+                label.style.maxWidth = node.name.length >= 8 ? '58px' : '60px';
 
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
@@ -750,8 +808,6 @@ class NetWordChart {
 
                 iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
                 container.style.backgroundColor = "#4C65BF"
-                legendContainer.style.width = "-webkit-fill-available"
-                legendContainer.style.maxHeight = "-webkit-fill-available"
                 containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
                 legendMain.style.background = "rgba(201, 201, 201, 0.04)"
                 panelGroup.style.display = "flex"
@@ -761,14 +817,11 @@ class NetWordChart {
             } else {
                 targetWidth = w;
                 targetHeight = h;
-                iconZoom.innerHTML = '<img src="http://demo.idrsoft.com/apm/assets/images/ic_DBservice_zoom.png" alt="zoom-out">'
+                iconZoom.innerHTML = '<img src="./img/ic_DBservice_zoom.png" alt="zoom-out">'
                 container.style.backgroundColor = "#32427B"
                 legendMain.style.background = "none"
-                legendContainer.style.width = w + "px"
-                legendContainer.style.height = h + "px"
                 containerMain.style.boxShadow = "none"
                 panelGroup.style.display = "grid"
-                legendContainer.style.height = "fit-content"
                 renderer.setPixelRatio(window.devicePixelRatio, 2);
                 legendMain.style.opacity = 0
                 setTimeout(() => {
@@ -780,8 +833,8 @@ class NetWordChart {
 
         function animateSizeChange() {
             if (currentWidth !== targetWidth || currentHeight !== targetHeight) {
-                currentWidth += (targetWidth - currentWidth) / 10;
-                currentHeight += (targetHeight - currentHeight) / 10;
+                currentWidth += (targetWidth - currentWidth) / 8;
+                currentHeight += (targetHeight - currentHeight) / 8;
                 renderer.setSize(currentWidth, currentHeight, false);
             }
         }
