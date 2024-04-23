@@ -61,10 +61,14 @@ This dataset provides an overview of various web services along with their assoc
 * `lineSize` : Customize the size of the lines.If not set default value is 0.001,
 * `width` : Customize chart width size,
 * `height` : Customize chart height size,
+* `height` : Customize chart height size,
+* `customizeZoom` : Customize zoom,
+* `colorService` : Customize color service,
+
 
 ## Libraries and Technologies
 
-- D3.js: Used to get color codes.
+- D3.js: Used to get the color code and calculate the size of service buttons.
 - Three.js: Used to draw charts and use 3D rendering.
 
 ## References

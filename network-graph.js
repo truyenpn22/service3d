@@ -23,7 +23,7 @@ class NetWordChart {
 
         let customColor = this.config.colorService || ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
         let customizeZoom = this.config.customizeZoom || 2.2
-        let serviceNodes, tableNodes;
+        let serviceNodes;
         let isClicked = false;
         let globalRotation = 0;
         let isRotating = false;
@@ -259,6 +259,7 @@ class NetWordChart {
 
                     sphere.onClick = function () {
                         this.userData.isSelected = !this.userData.isSelected;
+                        controls.reset();
 
                         if (isRotating || isControlChange) {
                             return;
@@ -308,8 +309,8 @@ class NetWordChart {
                                         const shadowGeometry = new THREE.SphereGeometry(0.26, 18, 12);
                                         shadowGeometry.rotateX(Math.PI / 2);
                                         const shadowMaterial = new THREE.MeshToonMaterial({
-                                            color: colors(targetNode.id),
-                                            emissive: colors(targetNode.id),
+                                            color: 0x529EA4,
+                                            emissive: 0x529EA4,
                                             transparent: true,
                                             opacity: 0.5,
                                         });
@@ -331,6 +332,7 @@ class NetWordChart {
                                 const rotationIncrement = rotateAngle / framesPerRotation;
                                 controls.enabled = false;
                                 iconNext.style.pointerEvents = 'none'
+
 
                                 rotateInterval = setInterval(() => {
                                     if (globalRotation >= rotateAngle) {
@@ -356,8 +358,6 @@ class NetWordChart {
                                         let text = node.name.toUpperCase();
 
                                         let maxCharactersPerLine = text.length >= 8 ? 5 : 4;
-
-
 
                                         const lines = [];
                                         for (let i = 0; i < text.length; i += maxCharactersPerLine) {
@@ -436,7 +436,7 @@ class NetWordChart {
                                         });
 
 
-                                        const atmoService = new THREE.SphereGeometry(1.9, 64, 32);
+                                        const atmoService = new THREE.SphereGeometry(2.0, 64, 32);
                                         const atmoServiceSphere = new THREE.Mesh(atmoService, glowServiceMaterial);
                                         atmoServiceSphere.position.set(0, 0, -0.5);
                                         allNodesGroupDetails.add(atmoServiceSphere);
@@ -463,7 +463,7 @@ class NetWordChart {
                                             const geometry = new THREE.CylinderGeometry(0.4, 0.4, 0.08, 50);
                                             geometry.rotateX(Math.PI / 2);
 
-                                            const material = new THREE.MeshStandardMaterial({ color: 0xFF6D28, emissive: 0xFF6D28, roughness: 0.5, metalness: 2 });
+                                            const material = new THREE.MeshStandardMaterial({ color: 0x529EA4, emissive: 0x529EA4, roughness: 0.5, metalness: 2 });
 
                                             const sphere = new THREE.Mesh(geometry, material);
 
@@ -488,9 +488,10 @@ class NetWordChart {
                                             scene.add(allNodesGroupDetails);
 
 
+
                                             const glowTableMaterial = new THREE.ShaderMaterial({
                                                 uniforms: {
-                                                    glowColor: { value: new THREE.Color(0xFF6D28) },
+                                                    glowColor: { value: new THREE.Color(0x529EA4) },
                                                 },
                                                 vertexShader:
                                                     `
@@ -530,7 +531,7 @@ class NetWordChart {
 
                                             loader.load(fontUrl, function (font) {
                                                 const textMaterial = new THREE.MeshToonMaterial({ color: 0xF4F4F4, emissive: 0xF4F4F4 });
-                                                const countTextMaterial = new THREE.MeshBasicMaterial({ color: 0x00BDAA });
+                                                const countTextMaterial = new THREE.MeshBasicMaterial({ color: 0xa0cccf });
 
                                                 const countTextGeometry = new TextGeometry(targetNode.count.toString(), {
                                                     font: font,
@@ -564,8 +565,7 @@ class NetWordChart {
                                     }
                                 }, rotateDuration / framesPerRotation);
                             }
-                            renderer.render(scene, camera);
-                            controls.reset();
+
                         }
                     }
 
@@ -575,17 +575,20 @@ class NetWordChart {
                     const z = sphereRadius * Math.sin(theta) * Math.sin(phi);
 
                     const geometry = new THREE.SphereGeometry(0.1, 18, 12);
-                    const material = new THREE.MeshStandardMaterial({ color: 0xFF6D28, emissive: 0xFF6D28, emissiveIntensity: 1 });
+                    const material = new THREE.MeshBasicMaterial({ color: 0x448388 });
 
                     const sphere = new THREE.Mesh(geometry, material);
 
-                    const countLabel = createLabel(node.count, "#00BDAA", 28);
-                    countLabel.position.set(x, y + 1, z);
+                    const countLabel = createLabel(node.count, "#a0cccf", 15);
                     allNodesGroup.add(countLabel)
+                    countLabel.position.set(x, y + 0.55, z);
 
-                    const nameLabel = createLabel(node.name.toUpperCase(), "#F4F4F4", 35);
-                    nameLabel.position.set(x, y + 0.1, z);
+
+                    const nameLabel = createLabel(node.name.toUpperCase(), "#ffffff");
                     allNodesGroup.add(nameLabel)
+                    nameLabel.position.set(x, y + 0.35, z);
+
+
                     node.countLabel = countLabel;
                     node.nameLabel = nameLabel;
 
@@ -638,12 +641,12 @@ class NetWordChart {
 
         // ================================================ 
 
-        function createLabel(text, color, paddingT) {
+        function createLabel(text, color, FontSize) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            const fontSize = 15;
-            const padding = paddingT || 30;
-            const font = `bold ${fontSize}px Arial`;
+            const fontSize = FontSize || 12;
+            const padding = 35;
+            const font = `${fontSize}px Arial`;
             context.font = font;
             const textMetrics = context.measureText(text);
             const width = textMetrics.width + padding * 2;
@@ -660,10 +663,14 @@ class NetWordChart {
             context.fillText(text, padding, fontSize + padding);
 
             const texture = new THREE.CanvasTexture(canvas);
-            texture.needsUpdate = true;
-            const material = new THREE.SpriteMaterial({ map: texture });
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                depthTest: true,
+                depthWrite: false,
+                transparent: true
+            });
+
             const label = new THREE.Sprite(material);
-            label.rotation.x = Math.PI;
             label.scale.set(width / height, 0.9, 1);
             return label;
         }
@@ -681,14 +688,8 @@ class NetWordChart {
             legendContainer.style.gridTemplateColumns = "repeat(4, 1fr)"
             legendContainer.style.margin = "4px"
 
-            // legendContainer.style.height = "fit-content"
-            // legendContainer.style.maxHeight = h + "px"
-            // legendContainer.style.gap = "3px"
-
-
             panelGroup.appendChild(legendMain)
             legendMain.appendChild(legendContainer);
-
 
             const legendItems = nodes.filter(node => node.type === 'service');
             legendItems.forEach(node => {
@@ -748,6 +749,7 @@ class NetWordChart {
 
         // ================================================ 
 
+
         const iconNext = document.createElement('div')
         iconNext.classList.add('button-next');
         iconNext.innerHTML = '<img  src="./img/next.svg" alt="iconNext">'
@@ -762,11 +764,12 @@ class NetWordChart {
             allNodesGroupDetails.visible = false;
             allNodesGroupDetails.children.length = 0;
 
-            allNodesGroup.children.forEach((node) => {
-                if (node.userData.shadowMesh) {
-                    node.userData.shadowMesh.visible = false;
-                }
-            });
+            // allNodesGroup.children.forEach((node) => {
+            //     if (node.userData.shadowMesh) {
+            //         node.userData.shadowMesh.visible = false;
+            //     }
+            // });
+
 
             nodes.forEach(node => {
                 scene.fog = new THREE.FogExp2(0x5e5f63, 0.05);
@@ -776,15 +779,15 @@ class NetWordChart {
                 }
             });
 
+
             allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = true; });
 
             connectingLines.forEach((line) => { line.visible = false; });
 
             isClicked = false;
             controls.enabled = true;
-            controls.reset();
-
             camera.position.set(0, 0, 12)
+            controls.update();
             clearInterval(rotateInterval);
         });
 
@@ -892,6 +895,8 @@ class NetWordChart {
                     const cameraPosition = camera.position.clone();
                     const rotationMatrix = new THREE.Matrix4();
                     rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
+                    serviceNodes = nodes.filter(node => node.type === 'service');
+
                     for (let i = 0; i < serviceNodes.length; i++) {
                         const node = serviceNodes[i];
                         node.sphere.quaternion.setFromRotationMatrix(rotationMatrix);
@@ -933,32 +938,14 @@ class NetWordChart {
                             shadowMesh.position.copy(node.sphere.position);
                             shadowMesh.rotation.copy(node.sphere.rotation);
                         }
-                    });
-                    tableNodes = nodes.filter(node => node.type === 'table');
-                    tableNodes.forEach(node => {
-                        if (node.countLabel && node.nameLabel) {
-                            node.countLabel.rotation.y -= rotationY;
-                            node.nameLabel.rotation.y -= rotationY;
 
-                            const sphere = node.sphere;
-                            const countText = node.countLabel;
-                            const nameText = node.nameLabel;
-
-                            const textDistance = 0.6;
-                            const textHeight = 0.26;
-                            const textX = sphere.position.x;
-                            const textY = sphere.position.y + textDistance;
-                            const textZ = sphere.position.z;
-
-                            countText.position.set(textX, textY, textZ);
-                            nameText.position.set(textX, textY - textHeight, textZ);
-                        }
                     });
                 }
             } else {
                 scene.rotation.y = 0;
                 controls.reset();
             }
+
             renderer.render(scene, camera);
         };
 
