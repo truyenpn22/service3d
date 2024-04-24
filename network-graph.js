@@ -52,7 +52,6 @@ class NetWordChart {
         camera.lookAt(scene.position);
 
 
-
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: true,
@@ -118,7 +117,6 @@ class NetWordChart {
         value.domain([minValue, max]).range([0.3, 0.6])
 
 
-
         // ==============================================================
 
         function extractNodesAndLinks(data) {
@@ -167,13 +165,13 @@ class NetWordChart {
         // ==============================================================
 
 
-
         function createVisualNodesAndLinks(nodes, links) {
             const totalNodes = nodes.length;
             const maxRadius = 6;
             const minRadius = 6.2;
             const sphereRadius = Math.max(minRadius, Math.min(maxRadius, totalNodes / 10));
             scene.fog = new THREE.FogExp2(0x5e5f63, 0.05);
+
 
             nodes.forEach((node, index) => {
                 const phi = Math.acos(1 - (2 * index + 1) / totalNodes);
@@ -198,8 +196,6 @@ class NetWordChart {
                     let text = node.name.toUpperCase();
 
                     let maxCharactersPerLine = text.length >= 8 ? 5 : 4;
-
-
 
                     const lines = [];
                     for (let i = 0; i < text.length; i += maxCharactersPerLine) {
@@ -646,7 +642,7 @@ class NetWordChart {
             const context = canvas.getContext('2d');
             const fontSize = FontSize || 12;
             const padding = 35;
-            const font = `${fontSize}px Arial`;
+            const font = `500 ${fontSize}px Arial`;
             context.font = font;
             const textMetrics = context.measureText(text);
             const width = textMetrics.width + padding * 2;
@@ -657,8 +653,7 @@ class NetWordChart {
             context.font = font;
             context.imageSmoothingEnabled = true
             context.filter = "contrast(1.4)";
-            context.fillStyle = '#31304D';
-            context.fillText(text, padding - 0.8, fontSize + padding - 1);
+
             context.fillStyle = color || "white";
             context.fillText(text, padding, fontSize + padding);
 
@@ -679,13 +674,12 @@ class NetWordChart {
 
         function createLegend(nodes) {
             legendMain = document.createElement('div');
-            legendMain.style.backdropFilter = "blur(20px)"
             legendMain.style.borderBottomLeftRadius = "10px"
             legendMain.style.borderBottomRightRadius = "10px"
 
             legendContainer = document.createElement('div');
             legendContainer.style.display = "grid"
-            legendContainer.style.gridTemplateColumns = "repeat(4, 1fr)"
+            legendContainer.style.gridTemplateColumns = w <= 300 ? "repeat(3, 1fr)" : "repeat(4, 1fr)"
             legendContainer.style.margin = "4px"
 
             panelGroup.appendChild(legendMain)
@@ -808,7 +802,6 @@ class NetWordChart {
             if (isZoomed) {
                 targetWidth = w * customizeZoom;
                 targetHeight = h * customizeZoom;
-
                 iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
                 container.style.backgroundColor = "#4C65BF"
                 containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
@@ -836,8 +829,8 @@ class NetWordChart {
 
         function animateSizeChange() {
             if (currentWidth !== targetWidth || currentHeight !== targetHeight) {
-                currentWidth += (targetWidth - currentWidth) / 8;
-                currentHeight += (targetHeight - currentHeight) / 8;
+                currentWidth += (targetWidth - currentWidth) / 10;
+                currentHeight += (targetHeight - currentHeight) / 10;
                 renderer.setSize(currentWidth, currentHeight, false);
             }
         }
