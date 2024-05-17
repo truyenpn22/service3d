@@ -49,6 +49,9 @@ This dataset provides an overview of various web services along with their assoc
             rotationY (optional): 0.002,
             rotateSpeed (optional): 700,
             lineSize (optional): 0.001,
+            width (optional): 250,
+            height (optional): 250,
+            customizeZoom (optional): 3
         })
     })
 </script>
@@ -62,9 +65,7 @@ This dataset provides an overview of various web services along with their assoc
 * `width` : Customize chart width size,
 * `height` : Customize chart height size,
 * `height` : Customize chart height size,
-* `customizeZoom` : Customize zoom,
-* `colorService` : Customize color service,
-
+* `customizeZoom` : Customize zoom
 
 ## Libraries and Technologies
 

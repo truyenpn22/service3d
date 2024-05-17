@@ -4,8 +4,6 @@ import { FontLoader } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/loa
 import { OrbitControls } from 'https://www.unpkg.com/three@0.140.0/examples/jsm/controls/OrbitControls.js';
 
 
-let rotateInterval;
-
 class NetWordChart {
     constructor(config) {
         this.config = config;
@@ -16,27 +14,24 @@ class NetWordChart {
         let classId = this.config.Id || "network-graph";
         let data = this.config.data || [];
         let rotationY = this.config.rotationY || 2;
-        let rotateSpeed = this.config.rotateSpeed || 800;
-        let lineSize = this.config.lineSize || 0.001
-        let w = this.config.width || window.innerWidth;
-        let h = this.config.height || window.innerHeight;
+        let lineSize = this.config.lineSize || 0.001;
+        let w = this.config.width || 250;
+        let h = this.config.height || 250;
 
-        let customColor = this.config.colorService || ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
         let customizeZoom = this.config.customizeZoom || 2.2
-        let serviceNodes;
         let isClicked = false;
-        let globalRotation = 0;
         let isRotating = false;
         let connectingLines = [];
         let controlsInitialized = false;
         let isControlChange = false;
-        let isDraggingControls = false;
+        let isDetailsVisible = false;
         let serviceNodeLookup = {};
         let isZoomed = false;
-        let targetWidth = w;
-        let targetHeight = h;
-        let currentWidth = w;
-        let currentHeight = h;
+        let clickCount = 0;
+        let _wzm;
+        let _hzm;
+        let resetChart;
+        let serviceNodes;
         let containerMain;
         let legendContainer;
         let legendMain;
@@ -61,13 +56,13 @@ class NetWordChart {
         camera.updateProjectionMatrix();
         renderer.setPixelRatio(window.devicePixelRatio, 5);
         renderer.setSize(w, h, false);
-
+        renderer.toneMapping = THREE.LinearToneMapping;
+        renderer.toneMappingExposure = 1.4;
 
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
 
         containerMain = document.getElementById(classId)
-
         container = document.createElement('div');
         container.classList.add('menuMain');
         containerMain.appendChild(container)
@@ -79,14 +74,14 @@ class NetWordChart {
         let panelGroup = document.createElement('div');
         panelGroup.classList.add('panelGroup');
         panelGroup.style.display = "grid"
+        panelGroup.appendChild(renderer.domElement).style.borderBottomLeftRadius = '10px';
 
         containerMain.appendChild(panelGroup)
-        panelGroup.appendChild(renderer.domElement).style.borderBottomLeftRadius = '10px';
+
 
         // ==============================================================
 
         const loader = new FontLoader();
-        const colors = d3.scaleOrdinal(customColor);
 
 
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -98,10 +93,6 @@ class NetWordChart {
 
 
         // ==============================================================
-
-        renderer.toneMapping = THREE.LinearToneMapping
-        renderer.toneMappingExposure = 1.4
-
 
         let max = data[0].relatedTables.length
         let minValue = data[0].relatedTables.length
@@ -130,6 +121,7 @@ class NetWordChart {
                     serviceNode = {
                         id: service.id,
                         name: service.name,
+                        color: service.color,
                         type: "service"
                     };
                     nodes.push(serviceNode);
@@ -241,7 +233,7 @@ class NetWordChart {
                     const texture = new THREE.CanvasTexture(labelCanvas);
 
                     const material = new THREE.MeshBasicMaterial({
-                        map: texture, color: colors(node.id)
+                        map: texture, color: node.color
                     });
 
                     const sphere = new THREE.Mesh(geometry, material);
@@ -254,39 +246,39 @@ class NetWordChart {
                     serviceNodeLookup[node.id] = sphere;
 
                     sphere.onClick = function () {
-                        this.userData.isSelected = !this.userData.isSelected;
                         controls.reset();
-
+                        this.userData.isSelected = !this.userData.isSelected;
                         if (isRotating || isControlChange) {
                             return;
                         }
                         if (this.userData.isSelected) {
-                            const shadowGeometry = new THREE.SphereGeometry(sphereRadius === 4 ? 0.65 : 0.75, 18, 20);
+                            const shadowGeometry = new THREE.SphereGeometry(radia + 0.1, 18, 20);
                             shadowGeometry.rotateX(Math.PI / 2);
                             const shadowMaterial = new THREE.MeshToonMaterial({
-                                color: colors(node.id),
-                                emissive: colors(node.id),
+                                color: node.color,
+                                emissive: node.color,
                                 transparent: true,
                                 opacity: 0.5,
                             });
                             const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
                             allNodesGroup.add(shadowMesh);
                             this.userData.shadowMesh = shadowMesh;
+                            shadowMesh.position.copy(this.position);
                             scene.add(allNodesGroup)
-                            connectingLines.push(shadowMesh)
+                            connectingLines.push(shadowMesh);
 
                             this.userData.connectedLines = []
-
                             links.forEach((link) => {
                                 if (link.source === node.id) {
                                     const targetNode = nodes.find(n => n.id === link.target);
+
                                     if (targetNode && targetNode.type === 'table') {
                                         const targetPosition = targetNode.sphere.position;
                                         const distance = this.position.distanceTo(targetPosition);
-                                        const geometry = new THREE.CylinderGeometry(0.05, 0.05, distance, 18);
+                                        const geometry = new THREE.CylinderGeometry(0.04, 0.04, distance, 18);
                                         const material = new THREE.MeshToonMaterial({
-                                            color: colors(node.id),
-                                            emissive: colors(node.id),
+                                            color: node.color,
+                                            emissive: node.color,
 
                                         });
                                         const line = new THREE.Mesh(geometry, material);
@@ -298,9 +290,6 @@ class NetWordChart {
                                         const axis = new THREE.Vector3(0, 1, 0);
                                         line.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
                                         allNodesGroup.add(line);
-                                        scene.add(allNodesGroup)
-
-                                        // this.userData.connectedLines.push(line);
 
                                         const shadowGeometry = new THREE.SphereGeometry(0.26, 18, 12);
                                         shadowGeometry.rotateX(Math.PI / 2);
@@ -313,94 +302,182 @@ class NetWordChart {
                                         const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
                                         shadowMesh.position.copy(targetPosition);
                                         allNodesGroup.add(shadowMesh);
-                                        scene.add(allNodesGroup)
                                         connectingLines.push(shadowMesh, line);
                                     }
                                 }
                             });
-
+                            scene.add(allNodesGroup);
 
                             if (!isRotating) {
                                 isRotating = true;
-                                const rotateDuration = rotateSpeed;
-                                const rotateAngle = (Math.PI * 2) - 3;
-                                const framesPerRotation = rotateSpeed;
-                                const rotationIncrement = rotateAngle / framesPerRotation;
-                                controls.enabled = false;
-                                iconNext.style.pointerEvents = 'none'
+
+                                let targetAngle = Math.atan2(sphere.position.x, sphere.position.z);
+                                let currentAngle = Math.atan2(camera.position.x, camera.position.z);
+                                let angleDifference = currentAngle - targetAngle;
+                                if (angleDifference < 0) {
+                                    angleDifference += Math.PI * 2;
+                                }
+
+                                const rotateDuration = targetAngle < 0 ? 800 : 1500;
+                                const startRotation = allNodesGroup.rotation.y;
+                                const endRotation = startRotation + angleDifference;
+
+                                let startTime = null;
+
+                                function showNodeDetails(node) {
+                                    const legendItems = document.querySelectorAll('.legend-item');
+                                    legendItems.forEach(item => {
+                                        item.style.pointerEvents = 'none';
+                                    });
+
+                                    resetChart.style.pointerEvents = null; connectingLines.forEach((line) => { line.visible = false; });
+
+                                    allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = false; });
+                                    allNodesGroup.visible = false;
+                                    allNodesGroupDetails.visible = true;
+
+                                    const newGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.5, 50);
+                                    newGeometry.rotateX(Math.PI / 2);
+
+                                    const labelCanvas = document.createElement('canvas');
+                                    const labelContext = labelCanvas.getContext('2d');
+
+                                    let text = node.name.toUpperCase();
+
+                                    let maxCharactersPerLine = text.length >= 8 ? 5 : 4;
+
+                                    const lines = [];
+                                    for (let i = 0; i < text.length; i += maxCharactersPerLine) {
+                                        lines.push(text.slice(i, i + maxCharactersPerLine));
+                                    }
+
+                                    const textWidth = lines.reduce((maxWidth, line) => {
+                                        const lineWidth = labelContext.measureText(line).width;
+                                        return Math.max(maxWidth, lineWidth);
+                                    }, 0);
+
+                                    const lineHeight = text.length <= 4 ? 35 : 30;
+
+                                    const fontSize = text.length <= 4 ? 18 : 25;
+                                    labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
+
+                                    labelCanvas.width = textWidth * 2.8;
+                                    labelCanvas.height = lineHeight * lines.length * 2.8;
+
+                                    labelContext.fillStyle = "#ffffff";
+                                    labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+
+                                    labelContext.fillStyle = "#000000";
+                                    labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
+                                    labelContext.save();
+                                    labelContext.translate(labelCanvas.width / 2, labelCanvas.height / 2);
+                                    labelContext.rotate(-Math.PI / 2);
+
+                                    const safeDistance = (geometry.parameters.radiusTop * 2) * 6;
+
+                                    lines.forEach((line, index) => {
+                                        const textWidth = labelContext.measureText(line).width;
+                                        const xPosition = -textWidth / 2;
+                                        const yPosition = ((index - lines.length / 8) * lineHeight) + safeDistance;
+                                        labelContext.fillText(line, xPosition, yPosition);
+                                    });
+
+                                    labelContext.restore();
+
+                                    const texture = new THREE.CanvasTexture(labelCanvas);
+                                    const newMaterial = new THREE.MeshBasicMaterial({ map: texture, color: node.color });
 
 
-                                rotateInterval = setInterval(() => {
-                                    if (globalRotation >= rotateAngle) {
-                                        clearInterval(rotateInterval);
-                                        isRotating = false;
-                                        globalRotation = 0;
-                                        document.body.style.cursor = 'default'
-                                        this.userData.isSelected = !this.userData.isSelected;
-                                        isClicked = true;
-                                        scene.fog = new THREE.FogExp2(0x000000, 0);
-                                        iconNext.style.pointerEvents = null;
+                                    const glowServiceMaterial = new THREE.ShaderMaterial({
+                                        uniforms: {
+                                            glowColor: { value: new THREE.Color(node.color) },
+                                        },
+                                        vertexShader:
+                                            `
+                                            varying vec3 vNormal;
+                                            varying vec3 vPosition;
+                                            void main() {
+                                            vNormal = normalize( normalMatrix * normal);
+                                          
+                                            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 0.8 );
+                                            vPosition = gl_Position.xyz;
+                                            }
+                                        `,
+                                        fragmentShader: `
+                                        varying vec3 vNormal;
+                                        varying vec3 vPosition;
+                                        uniform vec3 glowColor; 
+                                    
+                                        void main() {    
+                                            float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.25)), 4.4);
+                                            vec3 finalColor = glowColor * intensity;  
 
-                                        allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = false; });
-                                        allNodesGroup.visible = false;
-                                        allNodesGroupDetails.visible = true;
-
-                                        const newGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.08, 50);
-                                        newGeometry.rotateX(Math.PI / 2);
-
-                                        const labelCanvas = document.createElement('canvas');
-                                        const labelContext = labelCanvas.getContext('2d');
-
-                                        let text = node.name.toUpperCase();
-
-                                        let maxCharactersPerLine = text.length >= 8 ? 5 : 4;
-
-                                        const lines = [];
-                                        for (let i = 0; i < text.length; i += maxCharactersPerLine) {
-                                            lines.push(text.slice(i, i + maxCharactersPerLine));
+                                            gl_FragColor = vec4(finalColor, 0.45) * intensity;
                                         }
-
-                                        const textWidth = lines.reduce((maxWidth, line) => {
-                                            const lineWidth = labelContext.measureText(line).width;
-                                            return Math.max(maxWidth, lineWidth);
-                                        }, 0);
-
-                                        const lineHeight = text.length <= 4 ? 35 : 30;
-
-                                        const fontSize = text.length <= 4 ? 18 : 25;
-                                        labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
-
-                                        labelCanvas.width = textWidth * 2.8;
-                                        labelCanvas.height = lineHeight * lines.length * 2.8;
-
-                                        labelContext.fillStyle = "#ffffff";
-                                        labelContext.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
-
-                                        labelContext.fillStyle = "#000000";
-                                        labelContext.font = `400 ${fontSize}px "Noto Sans KR", sans-serif`;
-                                        labelContext.save();
-                                        labelContext.translate(labelCanvas.width / 2, labelCanvas.height / 2);
-                                        labelContext.rotate(-Math.PI / 2);
-
-                                        const safeDistance = (geometry.parameters.radiusTop * 2) * 6;
-
-                                        lines.forEach((line, index) => {
-                                            const textWidth = labelContext.measureText(line).width;
-                                            const xPosition = -textWidth / 2;
-                                            const yPosition = ((index - lines.length / 8) * lineHeight) + safeDistance;
-                                            labelContext.fillText(line, xPosition, yPosition);
-                                        });
-
-                                        labelContext.restore();
-
-                                        const texture = new THREE.CanvasTexture(labelCanvas);
-                                        const newMaterial = new THREE.MeshBasicMaterial({ map: texture, color: colors(node.id) });
+                                    `,
+                                        blending: THREE.AdditiveBlending,
+                                        side: THREE.BackSide,
+                                        transparent: true,
+                                        depthWrite: false,
+                                    });
 
 
+                                    const atmoService = new THREE.SphereGeometry(2.8, 64, 32);
+                                    const atmoServiceSphere = new THREE.Mesh(atmoService, glowServiceMaterial);
+                                    atmoServiceSphere.position.set(0, 0, -0.5);
+                                    allNodesGroupDetails.add(atmoServiceSphere);
 
-                                        const glowServiceMaterial = new THREE.ShaderMaterial({
+                                    const sphere = new THREE.Mesh(newGeometry, newMaterial);
+                                    sphere.position.set(0, 0, 0);
+                                    allNodesGroupDetails.add(sphere);
+                                    scene.add(allNodesGroupDetails)
+
+
+                                    const tableNodes = nodes.filter(node => node.type === 'table');
+                                    const targetIds = new Set(links.filter(link => link.source === node.id).map(link => link.target));
+                                    const tableNodesFiltered = tableNodes.filter(node => targetIds.has(node.id));
+                                    const numTables = tableNodesFiltered.length;
+
+                                    tableNodesFiltered.forEach((targetNode, index) => {
+                                        const theta = (index / numTables) * Math.PI * 2;
+                                        const offset = Math.PI / 2;
+
+                                        const x = sphereRadius * Math.cos(theta + offset);
+                                        const y = sphereRadius * Math.sin(theta + offset);
+                                        const z = 0;
+
+                                        const geometry = new THREE.CylinderGeometry(0.4, 0.4, 0.08, 50);
+                                        geometry.rotateX(Math.PI / 2);
+
+                                        const material = new THREE.MeshStandardMaterial({ color: 0x529EA4, emissive: 0x529EA4, roughness: 0.5, metalness: 2 });
+
+                                        const sphere = new THREE.Mesh(geometry, material);
+
+                                        sphere.position.set(x, y, z);
+                                        allNodesGroupDetails.add(sphere);
+                                        const sourceNode = nodes.find(n => n.id === node.id);
+                                        const sourcePosition = new THREE.Vector3(0, 0, 0);
+                                        const targetPosition = new THREE.Vector3(x, y, z);
+                                        const distance = sourcePosition.distanceTo(targetPosition);
+                                        const lineGeometry = new THREE.CylinderGeometry(0.02, 0.02, distance, 18);
+                                        const lineMaterial = new THREE.MeshToonMaterial({ color: sourceNode.color, emissive: sourceNode.color });
+                                        const line = new THREE.Mesh(lineGeometry, lineMaterial);
+
+                                        const direction = new THREE.Vector3().subVectors(targetPosition, sourcePosition);
+                                        const midpoint = new THREE.Vector3().addVectors(sourcePosition, direction.clone().multiplyScalar(0.5));
+                                        line.position.copy(midpoint);
+
+                                        const axis = new THREE.Vector3(0, 1, 0);
+                                        line.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
+
+                                        allNodesGroupDetails.add(line);
+                                        scene.add(allNodesGroupDetails);
+
+
+
+                                        const glowTableMaterial = new THREE.ShaderMaterial({
                                             uniforms: {
-                                                glowColor: { value: new THREE.Color(colors(node.id)) },
+                                                glowColor: { value: new THREE.Color(0x529EA4) },
                                             },
                                             vertexShader:
                                                 `
@@ -419,10 +496,10 @@ class NetWordChart {
                                             uniform vec3 glowColor; 
                                         
                                             void main() {    
-                                                float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.38)), 4.4);
+                                                float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.4)), 5.5);
                                                 vec3 finalColor = glowColor * intensity;  
 
-                                                gl_FragColor = vec4(finalColor, 0.25) * intensity;
+                                                gl_FragColor = vec4(finalColor, 0.4) * intensity;
                                             }
                                         `,
                                             blending: THREE.AdditiveBlending,
@@ -431,139 +508,89 @@ class NetWordChart {
                                             depthWrite: false,
                                         });
 
+                                        const atmoTable = new THREE.SphereGeometry(0.4, 64, 50);
 
-                                        const atmoService = new THREE.SphereGeometry(2.0, 64, 32);
-                                        const atmoServiceSphere = new THREE.Mesh(atmoService, glowServiceMaterial);
-                                        atmoServiceSphere.position.set(0, 0, -0.5);
-                                        allNodesGroupDetails.add(atmoServiceSphere);
-
-                                        const sphere = new THREE.Mesh(newGeometry, newMaterial);
-                                        sphere.position.set(0, 0, 0);
-                                        allNodesGroupDetails.add(sphere);
-                                        scene.add(allNodesGroupDetails)
+                                        const atmoTablespheree = new THREE.Mesh(atmoTable, glowTableMaterial);
+                                        atmoTablespheree.position.set(x, y, z + 0.36);
+                                        allNodesGroupDetails.add(atmoTablespheree);
 
 
-                                        const tableNodes = nodes.filter(node => node.type === 'table');
-                                        const targetIds = new Set(links.filter(link => link.source === node.id).map(link => link.target));
-                                        const tableNodesFiltered = tableNodes.filter(node => targetIds.has(node.id));
-                                        const numTables = tableNodesFiltered.length;
+                                        loader.load(fontUrl, function (font) {
+                                            const textMaterial = new THREE.MeshToonMaterial({ color: 0xF4F4F4, emissive: 0xF4F4F4 });
+                                            const countTextMaterial = new THREE.MeshBasicMaterial({ color: 0xa0cccf });
 
-                                        tableNodesFiltered.forEach((targetNode, index) => {
-                                            const theta = (index / numTables) * Math.PI * 2;
-                                            const offset = Math.PI / 2;
-
-                                            const x = sphereRadius * Math.cos(theta + offset);
-                                            const y = sphereRadius * Math.sin(theta + offset);
-                                            const z = 0;
-
-                                            const geometry = new THREE.CylinderGeometry(0.4, 0.4, 0.08, 50);
-                                            geometry.rotateX(Math.PI / 2);
-
-                                            const material = new THREE.MeshStandardMaterial({ color: 0x529EA4, emissive: 0x529EA4, roughness: 0.5, metalness: 2 });
-
-                                            const sphere = new THREE.Mesh(geometry, material);
-
-                                            sphere.position.set(x, y, z);
-                                            allNodesGroupDetails.add(sphere);
-                                            const sourceNode = nodes.find(n => n.id === node.id);
-                                            const sourcePosition = new THREE.Vector3(0, 0, 0);
-                                            const targetPosition = new THREE.Vector3(x, y, z);
-                                            const distance = sourcePosition.distanceTo(targetPosition);
-                                            const lineGeometry = new THREE.CylinderGeometry(0.04, 0.04, distance, 18);
-                                            const lineMaterial = new THREE.MeshToonMaterial({ color: new THREE.Color(colors(sourceNode.id)), emissive: new THREE.Color(colors(sourceNode.id)) });
-                                            const line = new THREE.Mesh(lineGeometry, lineMaterial);
-
-                                            const direction = new THREE.Vector3().subVectors(targetPosition, sourcePosition);
-                                            const midpoint = new THREE.Vector3().addVectors(sourcePosition, direction.clone().multiplyScalar(0.5));
-                                            line.position.copy(midpoint);
-
-                                            const axis = new THREE.Vector3(0, 1, 0);
-                                            line.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
-
-                                            allNodesGroupDetails.add(line);
-                                            scene.add(allNodesGroupDetails);
-
-
-
-                                            const glowTableMaterial = new THREE.ShaderMaterial({
-                                                uniforms: {
-                                                    glowColor: { value: new THREE.Color(0x529EA4) },
-                                                },
-                                                vertexShader:
-                                                    `
-                                                    varying vec3 vNormal;
-                                                    varying vec3 vPosition;
-                                                    void main() {
-                                                    vNormal = normalize( normalMatrix * normal);
-                                                  
-                                                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 0.8 );
-                                                    vPosition = gl_Position.xyz;
-                                                    }
-                                                `,
-                                                fragmentShader: `
-                                                varying vec3 vNormal;
-                                                varying vec3 vPosition;
-                                                uniform vec3 glowColor; 
-                                            
-                                                void main() {    
-                                                    float intensity = pow(0.8 - dot(vNormal, vec3(0, 0, 0.4)), 5.5);
-                                                    vec3 finalColor = glowColor * intensity;  
-    
-                                                    gl_FragColor = vec4(finalColor, 0.4) * intensity;
-                                                }
-                                            `,
-                                                blending: THREE.AdditiveBlending,
-                                                side: THREE.BackSide,
-                                                transparent: true,
-                                                depthWrite: false,
+                                            const countTextGeometry = new TextGeometry(targetNode.count.toString(), {
+                                                font: font,
+                                                size: 0.35,
+                                                height: 0.02,
                                             });
+                                            const countText = new THREE.Mesh(countTextGeometry, countTextMaterial);
+                                            countTextGeometry.computeBoundingBox();
+                                            const textWidthCount = countTextGeometry.boundingBox.max.x - countTextGeometry.boundingBox.min.x;
 
-                                            const atmoTable = new THREE.SphereGeometry(0.4, 64, 50);
+                                            allNodesGroupDetails.add(countText);
 
-                                            const atmoTablespheree = new THREE.Mesh(atmoTable, glowTableMaterial);
-                                            atmoTablespheree.position.set(x, y, z + 0.36);
-                                            allNodesGroupDetails.add(atmoTablespheree);
-
-
-                                            loader.load(fontUrl, function (font) {
-                                                const textMaterial = new THREE.MeshToonMaterial({ color: 0xF4F4F4, emissive: 0xF4F4F4 });
-                                                const countTextMaterial = new THREE.MeshBasicMaterial({ color: 0xa0cccf });
-
-                                                const countTextGeometry = new TextGeometry(targetNode.count.toString(), {
-                                                    font: font,
-                                                    size: 0.4,
-                                                    height: 0.02,
-                                                });
-                                                const countText = new THREE.Mesh(countTextGeometry, countTextMaterial);
-                                                countTextGeometry.computeBoundingBox();
-                                                const textWidthCount = countTextGeometry.boundingBox.max.x - countTextGeometry.boundingBox.min.x;
-
-                                                countText.position.set(x - textWidthCount / 2, y + 1.5, -0.3);
-                                                allNodesGroupDetails.add(countText);
-
-                                                const nameTextGeometry = new TextGeometry(targetNode.name.toUpperCase(), {
-                                                    font: font,
-                                                    size: 0.4,
-                                                    height: 0.02,
-                                                });
-                                                const nameText = new THREE.Mesh(nameTextGeometry, textMaterial);
-                                                nameTextGeometry.computeBoundingBox();
-                                                const textWidth = nameTextGeometry.boundingBox.max.x - nameTextGeometry.boundingBox.min.x;
-                                                nameText.position.set(x - textWidth / 2, y + 0.8, -0.2);
-                                                allNodesGroupDetails.add(nameText);
+                                            const nameTextGeometry = new TextGeometry(targetNode.name.toUpperCase(), {
+                                                font: font,
+                                                size: 0.35,
+                                                height: 0.02,
                                             });
+                                            const nameText = new THREE.Mesh(nameTextGeometry, textMaterial);
+                                            nameTextGeometry.computeBoundingBox();
+                                            const textWidth = nameTextGeometry.boundingBox.max.x - nameTextGeometry.boundingBox.min.x;
 
+                                            const isTableFacingUpOrDown = Math.abs(direction.y) > 0.5;
+
+                                            const yOffsetCount = isTableFacingUpOrDown ? (direction.y > 0 ? 1.5 : -1.2) : 1.5;
+                                            const yOffsetName = isTableFacingUpOrDown ? (direction.y > 0 ? 0.8 : -1.8) : 0.8;
+
+                                            countText.position.set(x - textWidthCount / 2, y + yOffsetCount, z);
+                                            nameText.position.set(x - textWidth / 2, y + yOffsetName, z);
+
+
+                                            allNodesGroupDetails.add(nameText);
                                         });
 
+                                    });
+                                }
+
+                                function rotate(timestamp) {
+                                    if (!startTime) startTime = timestamp;
+                                    const progress = timestamp - startTime;
+                                    const t = progress / rotateDuration;
+
+                                    if (t < 1) {
+                                        const interpolatedRotation = startRotation + (endRotation - startRotation) * t;
+                                        allNodesGroup.rotation.y = interpolatedRotation;
+                                        requestAnimationFrame(rotate);
                                     } else {
-                                        allNodesGroup.rotation.y += rotationIncrement;
-                                        globalRotation += rotationIncrement;
+                                        allNodesGroup.rotation.y = endRotation;
+                                        isRotating = true;
+                                        sphere.userData.isSelected = !sphere.userData.isSelected;
+                                        isClicked = true;
+                                        scene.fog = new THREE.FogExp2(0x000000, 0);
+                                        resetChart.style.pointerEvents = null;
+                                        const changeListener = () => {
+                                            serviceNodes.forEach((node) => {
+                                                node.sphere.rotation.y -= endRotation;
+                                            });
+                                        };
+
+                                        controls.addEventListener('change', changeListener);
+
                                     }
-                                }, rotateDuration / framesPerRotation);
+                                    sphere.onDoubleClick = function () {
+                                        showNodeDetails(node)
+                                    };
+                                }
+
+                                requestAnimationFrame(rotate);
                             }
+
 
                         }
                     }
+
 
                 } else {
                     const x = sphereRadius * Math.cos(theta) * Math.sin(phi);
@@ -615,7 +642,7 @@ class NetWordChart {
                     const distance = sourcePosition.distanceTo(targetPosition);
                     const geometry = new THREE.CylinderGeometry(lineSize, lineSize, distance, 18);
                     const material = new THREE.MeshBasicMaterial({
-                        color: new THREE.Color(colors(sourceNode.id)),
+                        color: new THREE.Color(sourceNode.color),
                     });
                     const line = new THREE.Mesh(geometry, material);
 
@@ -650,20 +677,15 @@ class NetWordChart {
             canvas.width = width;
             canvas.height = height;
 
-            context.font = font;
-            context.imageSmoothingEnabled = true
-            context.filter = "contrast(1.4)";
-
+            context.font = `Bold ${fontSize}px Arial`;
             context.fillStyle = color || "white";
+
             context.fillText(text, padding, fontSize + padding);
 
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({
-                map: texture,
-                depthTest: true,
-                depthWrite: false,
-                transparent: true
-            });
+            const texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+
+            const material = new THREE.SpriteMaterial({ map: texture, depthTest: true, depthWrite: false, transparent: true });
 
             const label = new THREE.Sprite(material);
             label.scale.set(width / height, 0.9, 1);
@@ -671,6 +693,7 @@ class NetWordChart {
         }
 
         // ================================================ 
+
 
         function createLegend(nodes) {
             legendMain = document.createElement('div');
@@ -689,12 +712,12 @@ class NetWordChart {
             legendItems.forEach(node => {
                 const legendItem = document.createElement('div');
                 legendItem.classList.add('legend-item');
-                legendItem.style.cursor = 'pointer'
-                legendItem.style.margin = "5px 8px"
+                legendItem.style.cursor = 'pointer';
+                legendItem.style.margin = "5px 8px";
 
                 const colorBox = document.createElement('div');
                 colorBox.classList.add('legend-color');
-                colorBox.style.backgroundColor = colors(node.id);
+                colorBox.style.backgroundColor = node.color;
 
                 const label = document.createElement('span');
                 label.textContent = node.name;
@@ -706,13 +729,22 @@ class NetWordChart {
                 legendItem.appendChild(label);
                 legendContainer.appendChild(legendItem);
 
-                legendItem.addEventListener('click', () => {
-                    const serviceNode = serviceNodeLookup[node.id];
-                    serviceNode.onClick();
-                    allNodesGroupDetails.visible = true;
-                    allNodesGroupDetails.children.length = 0;
-                });
+                const serviceNode = serviceNodeLookup[node.id];
 
+                const onClickHandler = () => {
+                    clickCount++;
+                    if (clickCount === 1) {
+                        serviceNode.onClick();
+                        isDetailsVisible = true;
+                        controls.reset()
+                    } else if (clickCount === 3) {
+                        serviceNode.onDoubleClick();
+                        clickCount = 0
+                        controls.reset()
+                    }
+                };
+
+                legendItem.addEventListener('click', onClickHandler);
             });
         }
 
@@ -720,121 +752,106 @@ class NetWordChart {
 
 
         // ================================================ 
+        function optionChart() {
+            const buttonItem = document.createElement('div')
+            buttonItem.classList.add('button-item')
+            container.appendChild(buttonItem)
 
-        const buttonItem = document.createElement('div')
-        buttonItem.classList.add('button-item')
-        container.appendChild(buttonItem)
+            const iconGeomatry = document.createElement('div')
+            iconGeomatry.classList.add('geomatryItem')
+            iconGeomatry.innerHTML = '<img  src="./img/ic_DBservicer.png" alt="iconGeomatry">';
+            iconGeomatry.style.paddingLeft = '10px'
+            iconGeomatry.style.display = 'flex'
+            iconGeomatry.style.alignItems = 'center'
+            iconGeomatry.style.gap = '10px'
 
-        const iconGeomatry = document.createElement('div')
-        iconGeomatry.classList.add('geomatryItem')
-        iconGeomatry.innerHTML = '<img  src="./img/ic_DBservicer.png" alt="iconGeomatry">';
-        iconGeomatry.style.paddingLeft = '10px'
-        iconGeomatry.style.display = 'flex'
-        iconGeomatry.style.alignItems = 'center'
-        iconGeomatry.style.gap = '10px'
-
-        const h3Element = document.createElement('h3');
-        h3Element.textContent = 'DB 서비스';
-        h3Element.style.fontSize = '15px'
-        h3Element.style.fontWeight = '400'
-        h3Element.style.color = '#C4E4FF'
-        iconGeomatry.appendChild(h3Element);
-        container.appendChild(iconGeomatry)
-
-        // ================================================ 
+            const h3Element = document.createElement('h3');
+            h3Element.textContent = 'DB 서비스';
+            h3Element.style.fontSize = '15px'
+            h3Element.style.fontWeight = '400'
+            h3Element.style.color = '#C4E4FF'
+            iconGeomatry.appendChild(h3Element);
+            container.appendChild(iconGeomatry)
 
 
-        const iconNext = document.createElement('div')
-        iconNext.classList.add('button-next');
-        iconNext.innerHTML = '<img  src="./img/next.svg" alt="iconNext">'
-        iconNext.style.width = '20px'
-        iconNext.style.height = '20px'
-        iconNext.style.padding = '8px'
-        iconNext.style.cursor = 'pointer'
-        buttonItem.appendChild(iconNext)
-        iconNext.addEventListener('click', () => {
-            allNodesGroup.rotation.y = 0;
-            allNodesGroup.visible = true;
-            allNodesGroupDetails.visible = false;
-            allNodesGroupDetails.children.length = 0;
-
-            // allNodesGroup.children.forEach((node) => {
-            //     if (node.userData.shadowMesh) {
-            //         node.userData.shadowMesh.visible = false;
-            //     }
-            // });
+            // ================================================ 
 
 
-            nodes.forEach(node => {
-                scene.fog = new THREE.FogExp2(0x5e5f63, 0.05);
-                scene.rotation.set(0, 0, 0)
-                if (node.type === 'service') {
-                    node.sphere.rotation.set(0, 0, 0);
-                }
+            resetChart = document.createElement('div')
+            resetChart.classList.add('button-next');
+            resetChart.innerHTML = '<img  src="./img/next.svg" alt="resetChart">'
+            resetChart.style.width = '20px'
+            resetChart.style.height = '20px'
+            resetChart.style.padding = '8px'
+            resetChart.style.cursor = 'pointer'
+            buttonItem.appendChild(resetChart)
+            resetChart.addEventListener('click', () => {
+                const legendItems = document.querySelectorAll('.legend-item')
+                legendItems.forEach(item => {
+                    item.style.pointerEvents = 'auto'
+                });
+
+                allNodesGroup.rotation.y = 0
+                allNodesGroup.visible = true
+                allNodesGroupDetails.visible = false
+                allNodesGroupDetails.children.length = 0
+
+                scene.fog = new THREE.FogExp2(0x5e5f63, 0.05)
+
+                allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = true; })
+                connectingLines.forEach((line) => { line.visible = false; })
+
+                isClicked = false
+                isRotating = false
+                clickCount = 0
+                controls.enabled = true
+                camera.position.set(0, 0, 12)
+                controls.reset();
+                controlChange()
             });
 
 
-            allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = true; });
-
-            connectingLines.forEach((line) => { line.visible = false; });
-
-            isClicked = false;
-            controls.enabled = true;
-            camera.position.set(0, 0, 12)
-            controls.update();
-            clearInterval(rotateInterval);
-        });
+            // ================================================ 
 
 
-        // ================================================ 
+            const iconZoom = document.createElement('div')
+            iconZoom.classList.add('button-zoom')
+            iconZoom.innerHTML = '<img  src="./img/ic_DBservice_zoom.png" alt="zoom-in">';
+            iconZoom.style.padding = '6px'
+            iconZoom.style.cursor = 'pointer'
+            buttonItem.appendChild(iconZoom)
 
+            iconZoom.addEventListener('click', () => {
+                isZoomed = !isZoomed;
+                if (isZoomed) {
+                    _wzm = w * customizeZoom;
+                    _hzm = h * customizeZoom;
+                    iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
+                    container.style.backgroundColor = "#4C65BF"
+                    containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
+                    legendMain.style.background = "rgba(201, 201, 201, 0.04)"
+                    panelGroup.style.display = "flex"
+                    camera.aspect = _wzm / _hzm;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(_wzm, _hzm, false);
+                    renderer.setPixelRatio(window.devicePixelRatio, 2);
+                } else {
+                    _wzm = w;
+                    _hzm = h;
+                    iconZoom.innerHTML = '<img src="./img/ic_DBservice_zoom.png" alt="zoom-out">'
+                    container.style.backgroundColor = "#32427B"
+                    legendMain.style.background = "none"
+                    containerMain.style.boxShadow = "none"
+                    panelGroup.style.display = "grid"
+                    camera.aspect = _wzm / _hzm;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(_wzm, _hzm, false);
+                    renderer.setPixelRatio(window.devicePixelRatio, 2);
+                }
+            });
 
-
-        const iconZoom = document.createElement('div')
-        iconZoom.classList.add('button-zoom')
-        iconZoom.innerHTML = '<img  src="./img/ic_DBservice_zoom.png" alt="zoom-in">';
-        iconZoom.style.padding = '6px'
-        iconZoom.style.cursor = 'pointer'
-        buttonItem.appendChild(iconZoom)
-
-        iconZoom.addEventListener('click', () => {
-            isZoomed = !isZoomed;
-            if (isZoomed) {
-                targetWidth = w * customizeZoom;
-                targetHeight = h * customizeZoom;
-                iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
-                container.style.backgroundColor = "#4C65BF"
-                containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
-                legendMain.style.background = "rgba(201, 201, 201, 0.04)"
-                panelGroup.style.display = "flex"
-                camera.aspect = targetWidth / targetHeight;
-                camera.updateProjectionMatrix();
-                renderer.setPixelRatio(window.devicePixelRatio, 2);
-            } else {
-                targetWidth = w;
-                targetHeight = h;
-                iconZoom.innerHTML = '<img src="./img/ic_DBservice_zoom.png" alt="zoom-out">'
-                container.style.backgroundColor = "#32427B"
-                legendMain.style.background = "none"
-                containerMain.style.boxShadow = "none"
-                panelGroup.style.display = "grid"
-                renderer.setPixelRatio(window.devicePixelRatio, 2);
-                legendMain.style.opacity = 0
-                setTimeout(() => {
-                    legendMain.style.opacity = 1
-                }, 800)
-            }
-        });
-
-
-        function animateSizeChange() {
-            if (currentWidth !== targetWidth || currentHeight !== targetHeight) {
-                currentWidth += (targetWidth - currentWidth) / 10;
-                currentHeight += (targetHeight - currentHeight) / 10;
-                renderer.setSize(currentWidth, currentHeight, false);
-            }
         }
-
+        optionChart()
 
         // ================================================ 
 
@@ -842,17 +859,27 @@ class NetWordChart {
         function addEventListeners() {
             const serviceNodes = nodes.filter(node => node.type === 'service');
             renderer.domElement.addEventListener('click', onDocumentClick);
+            renderer.domElement.addEventListener('click', onDocumentDoubleClick);
             renderer.domElement.addEventListener('mousemove', onDocumentMouseMove);
 
             function onDocumentClick(event) {
-                if (isClicked || isDraggingControls) return;
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
                 if (!clickedObject) return;
                 clickedObject.onClick();
             }
 
+            function onDocumentDoubleClick(event) {
+                const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
+                if (!clickedObject) return;
+                clickCount++
+                if (clickCount === 2) {
+                    clickedObject.onDoubleClick();
+                    clickCount = 0
+                }
+
+            }
+
             function onDocumentMouseMove(event) {
-                if (isClicked || isDraggingControls) return;
                 const hoveredObject = getObjectFromMouseEvent(event, serviceNodes);
                 document.body.style.cursor = hoveredObject ? 'pointer' : 'default';
             }
@@ -882,58 +909,36 @@ class NetWordChart {
         // ================================================ 
 
 
+
         function controlChange() {
-            if (!controlsInitialized) {
-                const changeListener = () => {
-                    const cameraPosition = camera.position.clone();
-                    const rotationMatrix = new THREE.Matrix4();
-                    rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
-                    serviceNodes = nodes.filter(node => node.type === 'service');
+            const changeListener = () => {
+                const cameraPosition = camera.position.clone();
+                const rotationMatrix = new THREE.Matrix4();
+                rotationMatrix.lookAt(cameraPosition, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0));
+                serviceNodes = nodes.filter(node => node.type === 'service');
 
-                    for (let i = 0; i < serviceNodes.length; i++) {
-                        const node = serviceNodes[i];
-                        node.sphere.quaternion.setFromRotationMatrix(rotationMatrix);
+                for (let i = 0; i < serviceNodes.length; i++) {
+                    const node = serviceNodes[i];
+                    node.sphere.quaternion.setFromRotationMatrix(rotationMatrix);
 
-                    }
-                };
+                }
+            };
 
-                const startListener = () => {
-                    isDraggingControls = true;
-                    document.body.style.cursor = 'grab';
-                };
+            controls.addEventListener('change', changeListener);
+            controlsInitialized = true;
 
-                const endListener = () => {
-                    document.body.style.cursor = 'default';
-                    isDraggingControls = false;
-                };
-
-                controls.addEventListener('change', changeListener);
-                controls.addEventListener('start', startListener);
-                controls.addEventListener('end', endListener);
-                controlsInitialized = true;
-            }
-            controls.update();
-            controls.autoRotate = true;
-            controls.autoRotateSpeed = rotationY;
         };
 
-        const animate = () => {
+        function animate() {
             requestAnimationFrame(animate);
-            animateSizeChange();
 
             if (!isClicked) {
-                controlChange();
-                if (!isDraggingControls) {
-                    serviceNodes = nodes.filter(node => node.type === 'service');
-                    serviceNodes.forEach((node) => {
-                        if (node.sphere.userData.isSelected && node.sphere.userData.shadowMesh) {
-                            const shadowMesh = node.sphere.userData.shadowMesh;
-                            shadowMesh.position.copy(node.sphere.position);
-                            shadowMesh.rotation.copy(node.sphere.rotation);
-                        }
-
-                    });
+                if (!controlsInitialized) {
+                    controlChange();
                 }
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = rotationY;
+                controls.update();
             } else {
                 scene.rotation.y = 0;
                 controls.reset();

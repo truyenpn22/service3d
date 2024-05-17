@@ -2,6 +2,7 @@
     {
         "id": "service1",
         "name": "상업정보고1",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "users",
@@ -23,6 +24,7 @@
     {
         "id": "service2",
         "name": "상업정보고2",
+        "color": "#D85741",
         "relatedTables": [
             {
                 "id": "users10",
@@ -44,6 +46,7 @@
     {
         "id": "service3",
         "name": "상업정보고3",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "users4",
@@ -75,6 +78,7 @@
     {
         "id": "service4",
         "name": "상업정보고4",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders7",
@@ -91,6 +95,7 @@
     {
         "id": "service5",
         "name": "상업정보고5",
+        "color": "#D85741",
         "relatedTables": [
             {
                 "id": "users4",
@@ -127,6 +132,7 @@
     {
         "id": "service6",
         "name": "상업정보고6",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders5",
@@ -148,6 +154,7 @@
     {
         "id": "service7",
         "name": "상업정보고7",
+        "color": "#D85741",
         "relatedTables": [
             {
                 "id": "PAYMENT_33",
@@ -174,6 +181,7 @@
     {
         "id": "service8",
         "name": "상업정보고8",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables6",
@@ -205,6 +213,7 @@
     {
         "id": "service9",
         "name": "상업정보고9",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables2",
@@ -251,6 +260,7 @@
     {
         "id": "service10",
         "name": "상업정보고10",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "products6",
@@ -282,6 +292,7 @@
     {
         "id": "service11",
         "name": "상업정보고11",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables2",
@@ -308,6 +319,7 @@
     {
         "id": "service12",
         "name": "상업정보고12",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "products6",
@@ -339,6 +351,7 @@
     {
         "id": "service13",
         "name": "상업정보",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables2",
@@ -405,6 +418,7 @@
     {
         "id": "service14",
         "name": "상업정보고14",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "products6",
@@ -461,6 +475,7 @@
     {
         "id": "service15",
         "name": "상업정보고15",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables17",
@@ -507,6 +522,7 @@
     {
         "id": "service16",
         "name": "상업정보고16",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables12",
@@ -533,6 +549,7 @@
     {
         "id": "service17",
         "name": "상업정보고17",
+        "color": "#ff8b24",
         "relatedTables": [
             {
                 "id": "tables17",
@@ -579,6 +596,7 @@
     {
         "id": "service18",
         "name": "상업정보고18",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "tables12",
@@ -605,6 +623,7 @@
     {
         "id": "service19",
         "name": "상업정보고19",
+        "color": "#ff8b24",
         "relatedTables": [
             {
                 "id": "tables17",
@@ -656,6 +675,7 @@
     {
         "id": "service20",
         "name": "상업정보고20",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "users14",
@@ -687,6 +707,7 @@
     {
         "id": "service21",
         "name": "상업정보고21",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders14",
@@ -718,6 +739,7 @@
     {
         "id": "service22",
         "name": "상업정보고22",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "users13",
@@ -744,6 +766,7 @@
     {
         "id": "service23",
         "name": "상업정보고23",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders14",
@@ -770,6 +793,7 @@
     {
         "id": "service24",
         "name": "상업정보고24",
+        "color": "#ff8b24",
         "relatedTables": [
             {
                 "id": "users13",
@@ -806,6 +830,7 @@
     {
         "id": "service25",
         "name": "상업정보고25",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders14",
@@ -837,6 +862,7 @@
     {
         "id": "service26",
         "name": "상업정보고26",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders141",
@@ -868,6 +894,7 @@
     {
         "id": "service27",
         "name": "상업정보고27",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders142",
@@ -899,6 +926,7 @@
     {
         "id": "service28",
         "name": "상업정보고28",
+        "color": "#ff8b24",
         "relatedTables": [
             {
                 "id": "orders143",
@@ -930,6 +958,7 @@
     {
         "id": "service29",
         "name": "상업정보고29",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders144",
@@ -961,6 +990,7 @@
     {
         "id": "service30",
         "name": "상업정보고30",
+        "color": "#008DDA",
         "relatedTables": [
             {
                 "id": "orders145",
@@ -984,316 +1014,6 @@
             },
             {
                 "id": "orders125",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service31",
-        "name": "상업정보고31",
-        "relatedTables": [
-            {
-                "id": "orders146",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users186",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders166",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users156",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders126",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service32",
-        "name": "상업정보고32",
-        "relatedTables": [
-            {
-                "id": "orders147",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users187",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders167",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users157",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders127",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service33",
-        "name": "상업정보고33",
-        "relatedTables": [
-            {
-                "id": "orders1478",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1878",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1678",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1578",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders1278",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service34",
-        "name": "상업정보고34",
-        "relatedTables": [
-            {
-                "id": "orders1477",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1877",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1677",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1577",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders127",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service35",
-        "name": "상업정보고35",
-        "relatedTables": [
-            {
-                "id": "orders1479",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1879",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1679",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1579",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders1279",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service36",
-        "name": "상업정보고36",
-        "relatedTables": [
-            {
-                "id": "orders14712",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users18712",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders16712",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users15712",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders12712",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service37",
-        "name": "상업정보고37",
-        "relatedTables": [
-            {
-                "id": "orders1471",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1871",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1671",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1571",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders1271",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service38",
-        "name": "상업정보고38",
-        "relatedTables": [
-            {
-                "id": "orders1472",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1872",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1672",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1572",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders1272",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service39",
-        "name": "상업정보고39",
-        "relatedTables": [
-            {
-                "id": "orders1473",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1873",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1673",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1573",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders1273",
-                "name": "Orders12",
-                "count": 150
-            }
-        ]
-    },
-    {
-        "id": "service40",
-        "name": "상업정보고40",
-        "relatedTables": [
-            {
-                "id": "orders1474",
-                "name": "Orders14",
-                "count": 150
-            },
-            {
-                "id": "users1874",
-                "name": "Users18",
-                "count": 150
-            },
-            {
-                "id": "orders1674",
-                "name": "Orders16",
-                "count": 150
-            },
-            {
-                "id": "users1574",
-                "name": "Users15",
-                "count": 150
-            },
-            {
-                "id": "orders1274",
                 "name": "Orders12",
                 "count": 150
             }
