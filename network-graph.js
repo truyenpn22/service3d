@@ -17,17 +17,16 @@ class NetWordChart {
         let lineSize = this.config.lineSize || 0.001;
         let w = this.config.width || 250;
         let h = this.config.height || 250;
-
         let customizeZoom = this.config.customizeZoom || 2.2
         let isClicked = false;
         let isRotating = false;
-        let connectingLines = [];
         let controlsInitialized = false;
         let isControlChange = false;
-        let isDetailsVisible = false;
-        let serviceNodeLookup = {};
         let isZoomed = false;
+        let serviceNodeLookup = {};
+        let connectingLines = [];
         let clickCount = 0;
+        let clickCountLegend = 0;
         let _wzm;
         let _hzm;
         let resetChart;
@@ -54,10 +53,10 @@ class NetWordChart {
 
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        renderer.setPixelRatio(window.devicePixelRatio, 5);
+        renderer.setPixelRatio(window.devicePixelRatio, 2);
         renderer.setSize(w, h, false);
         renderer.toneMapping = THREE.LinearToneMapping;
-        renderer.toneMappingExposure = 1.4;
+        renderer.toneMappingExposure = 1.5;
 
         const allNodesGroupDetails = new THREE.Group();
         const allNodesGroup = new THREE.Group();
@@ -86,7 +85,7 @@ class NetWordChart {
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
+        controls.dampingFactor = 0.04;
         controls.enablePan = false;
         controls.minDistance = 10;
         controls.maxDistance = 500;
@@ -268,6 +267,7 @@ class NetWordChart {
                             connectingLines.push(shadowMesh);
 
                             this.userData.connectedLines = []
+
                             links.forEach((link) => {
                                 if (link.source === node.id) {
                                     const targetNode = nodes.find(n => n.id === link.target);
@@ -310,6 +310,7 @@ class NetWordChart {
 
                             if (!isRotating) {
                                 isRotating = true;
+                                resetChart.style.pointerEvents = 'none'
 
                                 let targetAngle = Math.atan2(sphere.position.x, sphere.position.z);
                                 let currentAngle = Math.atan2(camera.position.x, camera.position.z);
@@ -318,7 +319,7 @@ class NetWordChart {
                                     angleDifference += Math.PI * 2;
                                 }
 
-                                const rotateDuration = targetAngle < 0 ? 800 : 1500;
+                                const rotateDuration = targetAngle < 0 ? 500 : 1500;
                                 const startRotation = allNodesGroup.rotation.y;
                                 const endRotation = startRotation + angleDifference;
 
@@ -660,7 +661,6 @@ class NetWordChart {
 
         const { nodes, links } = extractNodesAndLinks(data);
         createVisualNodesAndLinks(nodes, links);
-        addEventListeners()
 
         // ================================================ 
 
@@ -694,8 +694,7 @@ class NetWordChart {
 
         // ================================================ 
 
-
-        function createLegend(nodes) {
+        const createLegend = (nodes) => {
             legendMain = document.createElement('div');
             legendMain.style.borderBottomLeftRadius = "10px"
             legendMain.style.borderBottomRightRadius = "10px"
@@ -730,16 +729,17 @@ class NetWordChart {
                 legendContainer.appendChild(legendItem);
 
                 const serviceNode = serviceNodeLookup[node.id];
+                serviceNode.legendItem = legendItem;
 
                 const onClickHandler = () => {
-                    clickCount++;
-                    if (clickCount === 1) {
+                    clickCountLegend++;
+                    if (clickCountLegend === 1) {
                         serviceNode.onClick();
-                        isDetailsVisible = true;
                         controls.reset()
-                    } else if (clickCount === 3) {
+                        legendItem.classList.add('active');
+                    } else if (clickCountLegend === 2) {
                         serviceNode.onDoubleClick();
-                        clickCount = 0
+                        clickCountLegend = 0
                         controls.reset()
                     }
                 };
@@ -752,6 +752,7 @@ class NetWordChart {
 
 
         // ================================================ 
+
         function optionChart() {
             const buttonItem = document.createElement('div')
             buttonItem.classList.add('button-item')
@@ -773,9 +774,7 @@ class NetWordChart {
             iconGeomatry.appendChild(h3Element);
             container.appendChild(iconGeomatry)
 
-
-            // ================================================ 
-
+            // ================== resetChart ======================= 
 
             resetChart = document.createElement('div')
             resetChart.classList.add('button-next');
@@ -788,6 +787,7 @@ class NetWordChart {
             resetChart.addEventListener('click', () => {
                 const legendItems = document.querySelectorAll('.legend-item')
                 legendItems.forEach(item => {
+                    item.classList.remove("active")
                     item.style.pointerEvents = 'auto'
                 });
 
@@ -804,6 +804,7 @@ class NetWordChart {
                 isClicked = false
                 isRotating = false
                 clickCount = 0
+                clickCountLegend = 0
                 controls.enabled = true
                 camera.position.set(0, 0, 12)
                 controls.reset();
@@ -811,7 +812,7 @@ class NetWordChart {
             });
 
 
-            // ================================================ 
+            // ======================== iconZoom  ======================== 
 
 
             const iconZoom = document.createElement('div')
@@ -853,6 +854,7 @@ class NetWordChart {
         }
         optionChart()
 
+
         // ================================================ 
 
 
@@ -865,8 +867,13 @@ class NetWordChart {
             function onDocumentClick(event) {
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
                 if (!clickedObject) return;
+
                 clickedObject.onClick();
+                if (clickedObject.legendItem) {
+                    clickedObject.legendItem.classList.add('active');
+                }
             }
+
 
             function onDocumentDoubleClick(event) {
                 const clickedObject = getObjectFromMouseEvent(event, serviceNodes);
@@ -904,10 +911,10 @@ class NetWordChart {
             }
 
         }
+        addEventListeners()
 
 
         // ================================================ 
-
 
 
         function controlChange() {
