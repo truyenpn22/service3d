@@ -15,6 +15,7 @@ class NetWordChart {
         let data = this.config.data || [];
         let rotationY = this.config.rotationY || 2;
         let moveToNode = this.config.moveToNode || 3000
+        let durationDetail = this.config.durationDetail || moveToNode / 2
         let lineSize = this.config.lineSize || 0.001;
         let w = this.config.width || 250;
         let h = this.config.height || 250;
@@ -22,6 +23,7 @@ class NetWordChart {
         let isClicked = false;
         let isRotating = false;
         let controlsInitialized = false;
+        let isRestarted = false;
         let isZoomed = false;
         let serviceNodeLookup = {};
         let connectingLines = [];
@@ -428,27 +430,58 @@ class NetWordChart {
             animate();
         }
 
-        function animateCamera(startPosition, endPosition, duration, callback, initialDistance) {
+
+
+        function reStart() {
+            const legendItems = document.querySelectorAll('.legend-item')
+            legendItems.forEach(item => {
+                item.style.pointerEvents = 'auto'
+            });
+
+            allNodesGroup.rotation.y = 0
+            allNodesGroup.visible = true
+            allNodesGroupDetails.visible = false
+            allNodesGroupDetails.children.length = 0
+
+            scene.fog = new THREE.FogExp2(0x5e5f63, 0.05)
+
+            allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = true; })
+            connectingLines.forEach((line) => { line.visible = false; })
+            isRestarted = true;
+
+            isClicked = false
+            isRotating = false
+            raycasterEnabled = true;
+            legendMain.style.display = "block"
+            camera.position.set(0, 0, 12)
+            controlChange()
+        }
+
+
+        function animateCamera(startPosition, endPosition, duration, initialDistance, callback) {
             const startTime = performance.now();
 
             function animate() {
+                if (isRestarted) return;
+
                 const currentTime = performance.now();
                 const elapsedTime = currentTime - startTime;
                 const progress = Math.min(elapsedTime / duration, 1);
 
                 camera.position.lerpVectors(startPosition, endPosition, progress);
+                const initialFOV = camera.fov;
 
                 const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
                 const distanceRatio = initialDistance / currentDistance;
                 camera.position.multiplyScalar(distanceRatio);
 
-                controls.update();
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
                     camera.position.copy(endPosition);
-
+                    camera.fov = initialFOV;
+                    camera.updateProjectionMatrix();
                     if (callback) {
                         callback();
                     }
@@ -459,17 +492,18 @@ class NetWordChart {
         }
 
         function moveCameraToNode(position, node) {
+            isRestarted = false;
+
             const cameraPosition = new THREE.Vector3(position.x, position.y, position.z);
             const duration = moveToNode;
 
-            const initialFOV = camera.fov;
             const initialDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
 
-            animateCamera(camera.position, cameraPosition, duration, () => {
-                camera.fov = initialFOV;
-                camera.updateProjectionMatrix();
+            animateCamera(camera.position, cameraPosition, duration, initialDistance);
+            setTimeout(() => {
+                if (isRestarted) return;
                 showNodeDetails(node);
-            }, initialDistance);
+            }, durationDetail);
         }
 
 
@@ -488,6 +522,8 @@ class NetWordChart {
             raycasterEnabled = false;
 
             document.body.style.cursor = 'default'
+            legendMain.style.display = "none";
+
 
             resetChart.style.pointerEvents = null;
             connectingLines.forEach((line) => { line.visible = false; });
@@ -709,27 +745,7 @@ class NetWordChart {
 
 
         // ================================================ 
-        function reStart() {
-            const legendItems = document.querySelectorAll('.legend-item')
-            legendItems.forEach(item => {
-                item.style.pointerEvents = 'auto'
-            });
 
-            allNodesGroup.rotation.y = 0
-            allNodesGroup.visible = true
-            allNodesGroupDetails.visible = false
-            allNodesGroupDetails.children.length = 0
-
-            scene.fog = new THREE.FogExp2(0x5e5f63, 0.05)
-
-            allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = true; })
-            connectingLines.forEach((line) => { line.visible = false; })
-            isClicked = false
-            isRotating = false
-            raycasterEnabled = true;
-            camera.position.set(0, 0, 12)
-            controlChange()
-        }
 
         function optionChart() {
             const buttonItem = document.createElement('div')
@@ -799,8 +815,8 @@ class NetWordChart {
                     panelGroup.style.display = "grid"
                     camera.aspect = _wzm / _hzm;
                     camera.updateProjectionMatrix()
-                    renderer.setSize(_wzm, _hzm, false)
-                    renderer.setPixelRatio(window.devicePixelRatio, 2);
+                    renderer.setSize(_wzm, _hzm, false) -
+                        renderer.setPixelRatio(window.devicePixelRatio, 2);
                     reStart()
                 }
             });
