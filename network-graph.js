@@ -38,6 +38,7 @@ class NetWordChart {
         let legendMain;
         let container;
         let fontUrl = "https://unpkg.com/three@0.77.0/examples/fonts/helvetiker_bold.typeface.json";
+        let isNodeClicked = false;  // Flag to track if a node is clicked
 
         // ==============================================================
 
@@ -452,13 +453,15 @@ class NetWordChart {
             isClicked = false
             isRotating = false
             raycasterEnabled = true;
+
             legendMain.style.display = "block"
+
             camera.position.set(0, 0, 12)
             controlChange()
         }
 
 
-        function animateCamera(startPosition, endPosition, duration, initialDistance, callback) {
+        function animateCamera(startPosition, endPosition, duration, initialDistance) {
             const startTime = performance.now();
 
             function animate() {
@@ -482,9 +485,6 @@ class NetWordChart {
                     camera.position.copy(endPosition);
                     camera.fov = initialFOV;
                     camera.updateProjectionMatrix();
-                    if (callback) {
-                        callback();
-                    }
                 }
             }
 
@@ -493,6 +493,7 @@ class NetWordChart {
 
         function moveCameraToNode(position, node) {
             isRestarted = false;
+            raycasterEnabled = false;
 
             const cameraPosition = new THREE.Vector3(position.x, position.y, position.z);
             const duration = moveToNode;
@@ -514,7 +515,6 @@ class NetWordChart {
             isClicked = true;
             scene.fog = new THREE.FogExp2(0x000000, 0);
 
-            resetChart.style.pointerEvents = null;
             const legendItems = document.querySelectorAll('.legend-item');
             legendItems.forEach(item => {
                 item.style.pointerEvents = 'none';
@@ -525,7 +525,11 @@ class NetWordChart {
             legendMain.style.display = "none";
 
 
-            resetChart.style.pointerEvents = null;
+
+
+
+
+            // resetChart.style.pointerEvents = null;
             connectingLines.forEach((line) => { line.visible = false; });
 
             allNodesGroup.children.filter((other) => other.name === "link").forEach((n) => { n.material.visible = false; });
@@ -699,23 +703,29 @@ class NetWordChart {
 
         function createLegend(nodes) {
             legendMain = document.createElement('div');
-            legendMain.style.borderBottomLeftRadius = "10px"
-            legendMain.style.borderBottomRightRadius = "10px"
+            Object.assign(legendMain.style, {
+                borderBottomLeftRadius: "10px",
+                borderBottomRightRadius: "10px"
+            });
 
             legendContainer = document.createElement('div');
-            legendContainer.style.display = "grid"
-            legendContainer.style.gridTemplateColumns = w <= 300 ? "repeat(3, 1fr)" : "repeat(4, 1fr)"
-            legendContainer.style.margin = "4px"
+            Object.assign(legendContainer.style, {
+                display: "grid",
+                gridTemplateColumns: w <= 300 ? "repeat(3, 1fr)" : "repeat(4, 1fr)",
+                margin: "4px"
+            });
 
-            panelGroup.appendChild(legendMain)
+            panelGroup.appendChild(legendMain);
             legendMain.appendChild(legendContainer);
 
             const legendItems = nodes.filter(node => node.type === 'service');
             legendItems.forEach(node => {
                 const legendItem = document.createElement('div');
                 legendItem.classList.add('legend-item');
-                legendItem.style.cursor = 'pointer';
-                legendItem.style.margin = "5px 8px";
+                Object.assign(legendItem.style, {
+                    cursor: 'pointer',
+                    margin: "5px 8px"
+                });
 
                 const colorBox = document.createElement('div');
                 colorBox.classList.add('legend-color');
@@ -723,9 +733,11 @@ class NetWordChart {
 
                 const label = document.createElement('span');
                 label.textContent = node.name;
-                label.style.color = '#ffffff';
-                label.style.fontSize = '10px';
-                label.style.maxWidth = node.name.length >= 8 ? '58px' : '60px';
+                Object.assign(label.style, {
+                    color: '#ffffff',
+                    fontSize: '10px',
+                    maxWidth: node.name.length >= 8 ? '58px' : '60px'
+                });
 
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(label);
@@ -733,96 +745,96 @@ class NetWordChart {
 
                 const serviceNode = serviceNodeLookup[node.id];
 
-                const onClickHandler = () => {
-                    serviceNode.onClick();
-
-                };
-
-                legendItem.addEventListener('click', onClickHandler);
+                legendItem.addEventListener('click', () => { serviceNode.onClick() });
             });
         }
         createLegend(nodes);
+
 
 
         // ================================================ 
 
 
         function optionChart() {
-            const buttonItem = document.createElement('div')
-            buttonItem.classList.add('button-item')
-            container.appendChild(buttonItem)
+            const buttonItem = document.createElement('div');
+            buttonItem.classList.add('button-item');
+            container.appendChild(buttonItem);
 
-            const iconGeomatry = document.createElement('div')
-            iconGeomatry.classList.add('geomatryItem')
-            iconGeomatry.innerHTML = '<img  src="./img/ic_DBservicer.png" alt="iconGeomatry">';
-            iconGeomatry.style.paddingLeft = '10px'
-            iconGeomatry.style.display = 'flex'
-            iconGeomatry.style.alignItems = 'center'
-            iconGeomatry.style.gap = '10px'
+            const iconGeomatry = document.createElement('div');
+            iconGeomatry.classList.add('geomatryItem');
+            iconGeomatry.innerHTML = '<img src="./img/ic_DBservicer.png" alt="iconGeomatry">';
+            Object.assign(iconGeomatry.style, {
+                paddingLeft: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+            });
 
             const h3Element = document.createElement('h3');
             h3Element.textContent = 'DB 서비스';
-            h3Element.style.fontSize = '15px'
-            h3Element.style.fontWeight = '400'
-            h3Element.style.color = '#C4E4FF'
+            Object.assign(h3Element.style, {
+                fontSize: '15px',
+                fontWeight: '400',
+                color: '#C4E4FF'
+            });
             iconGeomatry.appendChild(h3Element);
-            container.appendChild(iconGeomatry)
+            container.appendChild(iconGeomatry);
 
-            // ================== resetChart ======================= 
-
-            resetChart = document.createElement('div')
+            const resetChart = document.createElement('div');
             resetChart.classList.add('button-next');
-            resetChart.innerHTML = '<img  src="./img/next.svg" alt="resetChart">'
-            resetChart.style.width = '20px'
-            resetChart.style.height = '20px'
-            resetChart.style.padding = '8px'
-            resetChart.style.cursor = 'pointer'
-            buttonItem.appendChild(resetChart)
+            resetChart.innerHTML = '<img src="./img/next.svg" alt="resetChart">';
+            Object.assign(resetChart.style, {
+                width: '20px',
+                height: '20px',
+                padding: '8px',
+                cursor: 'pointer'
+            });
+            buttonItem.appendChild(resetChart);
             resetChart.addEventListener('click', () => reStart());
 
-
-            // ======================== iconZoom  ======================== 
-
-
-            const iconZoom = document.createElement('div')
-            iconZoom.classList.add('button-zoom')
-            iconZoom.innerHTML = '<img  src="./img/ic_DBservice_zoom.png" alt="zoom-in">';
-            iconZoom.style.padding = '6px'
-            iconZoom.style.cursor = 'pointer'
-            buttonItem.appendChild(iconZoom)
+            const iconZoom = document.createElement('div');
+            iconZoom.classList.add('button-zoom');
+            iconZoom.innerHTML = '<img src="./img/ic_DBservice_zoom.png" alt="zoom-in">';
+            Object.assign(iconZoom.style, {
+                padding: '6px',
+                cursor: 'pointer'
+            });
+            buttonItem.appendChild(iconZoom);
 
             iconZoom.addEventListener('click', () => {
                 isZoomed = !isZoomed;
                 if (isZoomed) {
                     _wzm = w * customizeZoom;
                     _hzm = h * customizeZoom;
-                    iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">'
-                    container.style.backgroundColor = "#4C65BF"
-                    containerMain.style.boxShadow = "inset 0 0 2px #afaeae"
-                    legendMain.style.background = "rgba(201, 201, 201, 0.04)"
-                    panelGroup.style.display = "flex"
-                    camera.aspect = _wzm / _hzm
-                    camera.updateProjectionMatrix()
-                    renderer.setSize(_wzm, _hzm, false)
-                    renderer.setPixelRatio(window.devicePixelRatio, 2);
+                    iconZoom.innerHTML = '<img src="./img/ic_DBservice_out.png" alt="zoom-in">';
+                    Object.assign(container.style, {
+                        backgroundColor: "#4C65BF"
+                    });
+                    Object.assign(containerMain.style, {
+                        boxShadow: "inset 0 0 2px #afaeae"
+                    });
+                    legendMain.style.background = "rgba(201, 201, 201, 0.04)";
+                    panelGroup.style.display = "flex";
                 } else {
                     _wzm = w;
                     _hzm = h;
-                    iconZoom.innerHTML = '<img src="./img/ic_DBservice_zoom.png" alt="zoom-out">'
-                    container.style.backgroundColor = "#32427B"
-                    legendMain.style.background = "none"
-                    containerMain.style.boxShadow = "none"
-                    panelGroup.style.display = "grid"
-                    camera.aspect = _wzm / _hzm;
-                    camera.updateProjectionMatrix()
-                    renderer.setSize(_wzm, _hzm, false) -
-                        renderer.setPixelRatio(window.devicePixelRatio, 2);
-                    reStart()
+                    iconZoom.innerHTML = '<img src="./img/ic_DBservice_zoom.png" alt="zoom-out">';
+                    Object.assign(container.style, {
+                        backgroundColor: "#32427B"
+                    });
+                    legendMain.style.background = "none";
+                    containerMain.style.boxShadow = "none";
+                    panelGroup.style.display = "grid";
+                    reStart();
                 }
+                camera.aspect = _wzm / _hzm;
+                camera.updateProjectionMatrix();
+                renderer.setSize(_wzm, _hzm, false);
+                renderer.setPixelRatio(window.devicePixelRatio, 2);
             });
-
         }
-        optionChart()
+        optionChart();
+
 
 
         // ================================================ 
@@ -830,6 +842,7 @@ class NetWordChart {
 
         function addEventListeners() {
             const serviceNodes = nodes.filter(node => node.type === 'service');
+
             renderer.domElement.addEventListener('click', onDocumentClick);
             renderer.domElement.addEventListener('mousemove', onDocumentMouseMove);
 
@@ -840,10 +853,9 @@ class NetWordChart {
                 clickedObject.onClick();
             }
 
-
-
             function onDocumentMouseMove(event) {
-                if (!raycasterEnabled) return;
+                if (!raycasterEnabled) return document.body.style.cursor = 'default';
+
                 let hoveredObject = getObjectFromMouseEvent(event, serviceNodes);
                 document.body.style.cursor = hoveredObject ? 'pointer' : 'default';
             }
@@ -853,6 +865,7 @@ class NetWordChart {
                 const intersects = getIntersectingObjects(mouse, nodes);
                 return intersects.length > 0 ? intersects[0].object : null;
             }
+
             function getIntersectingObjects(mouse, nodes) {
                 const raycaster = new THREE.Raycaster();
                 raycaster.setFromCamera(mouse, camera);
@@ -866,9 +879,10 @@ class NetWordChart {
                 mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
                 return mouse;
             }
-
         }
-        addEventListeners()
+
+        addEventListeners();
+
 
 
 
